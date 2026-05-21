@@ -1,0 +1,107 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this is
+
+In-browser grammar/writing assistant. Pure client-side SPA — no server, no auth, no telemetry. User brings their own API key for one of several AI providers; everything (keys, history) lives in the browser's `localStorage`. Deployed as a static site on Netlify.
+
+**UX model:** translator-style, not chat. The app is a vertical stream of independent input → corrected-output pairs. Each submission is its own request; there are no follow-ups, no conversation context. A fresh `Composer` is always at the bottom and re-focuses after submit.
+
+Design language: minimalistic, mobile-first.
+
+## Commands
+
+```bash
+npm run dev        # Vite dev server (default http://localhost:5173)
+npm run build      # tsc -b && vite build → dist/
+npm run preview    # serve dist/ for local production check
+npm run typecheck  # tsc -b --noEmit (no test runner is configured)
+```
+
+There is intentionally no test suite, linter, or formatter yet. If you add one, update this section.
+
+## Architecture
+
+### Big picture
+
+Two hooks own all persistent state; `App.tsx` is the only place that wires them together:
+
+| State | Hook | Persisted as |
+|---|---|---|
+| Provider configs + which one is active | `useSettings` | `localStorage["grammar.settings.v1"]` |
+| Correction history | `useCorrections` | `localStorage["grammar.history.v1"]` |
+| Modal visibility | `useState` in `App.tsx` | not persisted |
+
+Components are presentational and receive callbacks; they never touch storage or providers directly.
+
+### Provider abstraction (`src/providers/`)
+
+The key seam in the codebase. Every AI provider implements the same interface:
+
+```ts
+interface ProviderAdapter {
+  id: ProviderId;
+  label: string;
+  defaultModel: string;
+  send(opts: SendOptions): AsyncIterable<string>;  // yields text deltas
+  listModels(config: ProviderConfig): Promise<string[]>;
+}
+```
+
+`useCorrections.correct()` is provider-agnostic — it builds a single-message `messages: [{role:'user', content: input}]` array, calls `adapter.send(...)`, and accumulates chunks. Adding a new provider means: create an adapter file, register it in `src/providers/index.ts`, add its id to the `ProviderId` union in `types.ts`. Nothing else changes.
+
+The `messages: ChatMessage[]` shape on `SendOptions` is preserved (even though we only ever send one) because every provider natively takes a chat-style input — collapsing to a single string would just push translation into each adapter.
+
+`listModels` is called from the SettingsPanel "Load" button. It hits each provider's models endpoint with the same key the user just configured and returns an array of model ids for a `<datalist>`-backed combobox. The Model field stays free-text — `listModels` is for autocomplete, not validation, so unlisted models (fine-tunes, preview models) can still be typed.
+
+Today every `send()` adapter yields the full response in one chunk (non-streaming). The iterator shape exists so streaming can be added per-provider without touching consumers.
+
+### Notes (model explanations) protocol
+
+Every correction request uses `SYSTEM_PROMPT`, which tells the model to wrap its reply in tags:
+
+```
+<corrected>
+... corrected text ...
+</corrected>
+<notes>
+- optional bullet
+- another bullet
+</notes>
+```
+
+The `<notes>` block is *intentionally optional* — the prompt instructs the model to omit it for short or routine edits. `src/lib/parseOutput.ts` extracts both tags; if `<corrected>` is missing (model ignored the format) it falls back to treating the raw response as the corrected text and discarding any structured-notes pretense. Parsed notes are persisted on `Correction.notes` and rendered as an amber "Notes" panel in `CorrectionItem`.
+
+This is unconditional — there's no per-config toggle. Less-capable models may produce poor notes or skip the format; the parser's fallback keeps them functional.
+
+### Request flow
+
+1. User types into `Composer`, presses Correct (or ⌘/Ctrl+Enter).
+2. `App.handleSubmit` picks the active `ProviderConfig`, calls `correct(text, config)`.
+3. `useCorrections.correct`:
+   - Appends a `Correction` with `status: 'pending'` to the history (saved to localStorage by the `useEffect` on `items`).
+   - Looks up the adapter, calls `adapter.send(...)`, accumulates text.
+   - Patches the item to `status: 'done'` with the output, or `status: 'error'` with a message on failure.
+4. `CorrectionItem` re-renders accordingly.
+
+On load, any `pending` items left over from a previous session (tab closed mid-request) are rewritten to `error` with "Interrupted" in `loadHistory()` — see `src/storage/corrections.ts`.
+
+### Provider-specific gotchas
+
+- **Anthropic:** browser calls require the `anthropic-dangerous-direct-browser-access: true` header (already set in `anthropic.ts`). Deliberately allowed because the app is single-user and the user supplied their own key. Both `/v1/messages` and `/v1/models` need this header.
+- **Gemini:** the API key goes in the URL as `?key=`, not in a header. Roles are `model` for assistant, `user` for user (mapped in the adapter). `listModels` filters to entries supporting `generateContent` and strips the `models/` prefix.
+- **OpenAI-compatible:** `baseURL` must be the path *up to but not including* `/chat/completions` (e.g. `https://openrouter.ai/api/v1`). Trailing slashes are stripped. `listModels` assumes a standard `GET {baseURL}/models` — providers that don't implement it will surface the HTTP error inline.
+
+## Conventions
+
+- **No backend.** Don't add a Netlify Function or proxy. The "your keys, your browser" model is the product. If a provider can't be called from the browser without a proxy, document it as unsupported rather than adding server code.
+- **No conversation context.** Each `correct()` call sends exactly one user message. Don't reintroduce multi-turn history — past corrections are independent records, not a chat transcript. If a user wants a different correction, they paste again.
+- **localStorage keys are versioned** (`grammar.settings.v1`, `grammar.history.v1`). If a shape changes incompatibly, bump the suffix and add a migration in the load function rather than silently breaking existing users.
+- **Tailwind only**, with a single `.input` component class in `index.css`. Dark mode uses the `class` strategy but no toggle is wired up yet — variants currently activate via `<html class="dark">` (not set by default). If you add a theme toggle, set the class on `<html>`.
+- **Mobile-first.** Layout uses `100dvh`, the `SettingsPanel` modal goes full-screen below the `sm` breakpoint. Don't regress this when adding UI.
+- **Type-only barrel.** `src/providers/index.ts` is the only re-export barrel; everything else imports from the file that defines it.
+
+## Deployment
+
+`netlify.toml` is configured for a static SPA: `npm run build` produces `dist/`, and all paths fall back to `/index.html` so client-side state survives refresh on any URL. No env vars are needed on Netlify — there is no server.
