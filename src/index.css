@@ -2,8 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    font-size: 18px;
+  }
+}
+
 @layer components {
   .input {
-    @apply w-full rounded-md border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-700 dark:bg-neutral-950;
+    @apply w-full rounded-md border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-gh-border dark:bg-gh-canvas;
   }
 }

@@ -53,7 +53,7 @@ interface ProviderAdapter {
 
 The `messages: ChatMessage[]` shape on `SendOptions` is preserved (even though we only ever send one) because every provider natively takes a chat-style input — collapsing to a single string would just push translation into each adapter.
 
-`listModels` is called from the SettingsPanel "Load" button. It hits each provider's models endpoint with the same key the user just configured and returns an array of model ids for a `<datalist>`-backed combobox. The Model field stays free-text — `listModels` is for autocomplete, not validation, so unlisted models (fine-tunes, preview models) can still be typed.
+`listModels` is called from the SettingsPanel "Load" button. It hits each provider's models endpoint with the same key the user just configured and returns an array of model ids for a `<datalist>`-backed combobox. The result is cached on the `ProviderConfig` itself (`models`, `modelsFetchedAt`) and persisted through `useSettings`, so the dropdown stays populated across sessions; the button becomes "Reload" once a cache exists. A successful fetch commits to saved settings immediately (bypassing the panel's draft) so the cache survives even if the user cancels unrelated edits. The Model field stays free-text — `listModels` is for autocomplete, not validation, so unlisted models (fine-tunes, preview models) can still be typed.
 
 Today every `send()` adapter yields the full response in one chunk (non-streaming). The iterator shape exists so streaming can be added per-provider without touching consumers.
 
@@ -98,7 +98,7 @@ On load, any `pending` items left over from a previous session (tab closed mid-r
 - **No backend.** Don't add a Netlify Function or proxy. The "your keys, your browser" model is the product. If a provider can't be called from the browser without a proxy, document it as unsupported rather than adding server code.
 - **No conversation context.** Each `correct()` call sends exactly one user message. Don't reintroduce multi-turn history — past corrections are independent records, not a chat transcript. If a user wants a different correction, they paste again.
 - **localStorage keys are versioned** (`grammar.settings.v1`, `grammar.history.v1`). If a shape changes incompatibly, bump the suffix and add a migration in the load function rather than silently breaking existing users.
-- **Tailwind only**, with a single `.input` component class in `index.css`. Dark mode uses the `class` strategy but no toggle is wired up yet — variants currently activate via `<html class="dark">` (not set by default). If you add a theme toggle, set the class on `<html>`.
+- **Tailwind only**, with a single `.input` component class in `index.css`. Dark mode uses the `media` strategy — `dark:` variants activate from `prefers-color-scheme: dark` and switch live when the OS theme changes. `<meta name="color-scheme" content="light dark">` in `index.html` lets native form controls and scrollbars follow suit. There is no in-app toggle; if you add one, switch `darkMode` to `'class'` in `tailwind.config.js` and drive the class on `<html>` from a `matchMedia` listener so the OS preference still wins by default.
 - **Mobile-first.** Layout uses `100dvh`, the `SettingsPanel` modal goes full-screen below the `sm` breakpoint. Don't regress this when adding UI.
 - **Type-only barrel.** `src/providers/index.ts` is the only re-export barrel; everything else imports from the file that defines it.
 

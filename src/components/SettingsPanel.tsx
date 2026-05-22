@@ -167,10 +167,10 @@ export function SettingsPanel({
       onClick={onClose}
     >
       <div
-        className="flex max-h-screen w-full flex-col overflow-hidden rounded-none bg-white shadow-xl dark:bg-neutral-900 sm:max-w-xl sm:rounded-xl"
+        className="flex max-h-screen w-full flex-col overflow-hidden rounded-none bg-white shadow-xl dark:bg-gh-surface sm:max-w-xl sm:rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-neutral-200 p-4 dark:border-neutral-800">
+        <div className="flex items-center justify-between border-b border-neutral-200 p-4 dark:border-gh-border-muted">
           <h2 className="text-lg font-semibold">Settings</h2>
           <button onClick={onClose} className="text-sm opacity-60 hover:opacity-100">
             Close
@@ -191,7 +191,7 @@ export function SettingsPanel({
             return (
               <div
                 key={c.id}
-                className="space-y-2 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800"
+                className="space-y-2 rounded-lg border border-neutral-200 p-3 dark:border-gh-border-muted"
               >
                 <div className="flex items-center justify-between gap-2">
                   {expanded ? (
@@ -291,7 +291,7 @@ export function SettingsPanel({
                       <button
                         type="button"
                         onClick={() => loadModels(c)}
-                        className="rounded-md border border-neutral-300 px-2 py-0.5 text-[11px] hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                        className="rounded-md border border-neutral-300 px-2 py-0.5 text-[11px] hover:bg-neutral-100 dark:border-gh-border dark:hover:bg-gh-overlay"
                       >
                         Retry
                       </button>
@@ -310,21 +310,21 @@ export function SettingsPanel({
                 <button
                   key={id}
                   onClick={() => add(id)}
-                  className="rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                  className="rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 dark:border-gh-border dark:hover:bg-gh-overlay"
                 >
                   + {adapters[id].label}
                 </button>
               ))}
           </div>
 
-          <div className="space-y-2 border-t border-neutral-200 pt-4 dark:border-neutral-800">
+          <div className="space-y-2 border-t border-neutral-200 pt-4 dark:border-gh-border-muted">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold">System prompt</h3>
               <button
                 type="button"
                 onClick={() => setDraft({ ...draft, systemPrompt: undefined })}
                 disabled={draft.systemPrompt === undefined}
-                className="shrink-0 rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 disabled:opacity-40 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                className="shrink-0 rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 disabled:opacity-40 dark:border-gh-border dark:hover:bg-gh-overlay"
                 title="Restore the built-in default prompt"
               >
                 Restore default
@@ -344,7 +344,7 @@ export function SettingsPanel({
             </div>
           </div>
 
-          <div className="space-y-2 border-t border-neutral-200 pt-4 dark:border-neutral-800">
+          <div className="space-y-2 border-t border-neutral-200 pt-4 dark:border-gh-border-muted">
             <h3 className="text-sm font-semibold">History</h3>
             <div className="flex items-center justify-between gap-3">
               <div className="text-xs text-neutral-500">
@@ -362,7 +362,7 @@ export function SettingsPanel({
                   }
                 }}
                 disabled={historyCount === 0}
-                className="shrink-0 rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 disabled:opacity-40 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                className="shrink-0 rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 disabled:opacity-40 dark:border-gh-border dark:hover:bg-gh-overlay"
               >
                 Clear history
               </button>
@@ -370,7 +370,7 @@ export function SettingsPanel({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-neutral-200 p-4 dark:border-neutral-800">
+        <div className="flex justify-end gap-2 border-t border-neutral-200 p-4 dark:border-gh-border-muted">
           <button onClick={onClose} className="px-3 py-2 text-sm">
             Cancel
           </button>

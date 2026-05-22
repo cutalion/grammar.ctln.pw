@@ -25,7 +25,7 @@ export function Composer({ onSubmit, disabled }: Props) {
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+    <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-gh-border-muted dark:bg-gh-surface">
       <textarea
         ref={textareaRef}
         value={text}
@@ -35,7 +35,7 @@ export function Composer({ onSubmit, disabled }: Props) {
         rows={4}
         className="w-full resize-y bg-transparent px-4 py-3 text-sm focus:outline-none"
       />
-      <div className="flex items-center justify-between border-t border-neutral-200 px-3 py-2 dark:border-neutral-800">
+      <div className="flex items-center justify-between border-t border-neutral-200 px-3 py-2 dark:border-gh-border-muted">
         <span className="text-[11px] text-neutral-400">⌘/Ctrl + Enter to submit</span>
         <button
           onClick={submit}

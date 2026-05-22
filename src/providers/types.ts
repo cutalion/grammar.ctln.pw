@@ -7,6 +7,8 @@ export interface ProviderConfig {
   apiKey: string;
   model: string;
   baseURL?: string;
+  models?: string[];
+  modelsFetchedAt?: number;
 }
 
 export interface ChatMessage {
@@ -27,6 +29,7 @@ export interface ProviderAdapter {
   id: ProviderId;
   label: string;
   defaultModel: string;
+  apiKeyUrl?: string;
   send(opts: SendOptions): AsyncIterable<string>;
   listModels(config: ProviderConfig): Promise<string[]>;
 }

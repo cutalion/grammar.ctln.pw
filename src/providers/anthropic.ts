@@ -7,8 +7,9 @@ const HEADERS_BASE = {
 
 export const anthropic: ProviderAdapter = {
   id: 'anthropic',
-  label: 'Anthropic (Claude)',
+  label: 'Anthropic',
   defaultModel: 'claude-sonnet-4-6',
+  apiKeyUrl: 'https://console.anthropic.com/settings/keys',
   async *send({ config, system, messages, signal }) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

@@ -4,6 +4,7 @@ export const openai: ProviderAdapter = {
   id: 'openai',
   label: 'OpenAI',
   defaultModel: 'gpt-4o-mini',
+  apiKeyUrl: 'https://platform.openai.com/api-keys',
   async *send({ config, system, messages, signal }) {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -30,6 +31,10 @@ export const openai: ProviderAdapter = {
     });
     if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);
     const data = await res.json();
-    return ((data?.data ?? []) as { id: string }[]).map((m) => m.id).sort();
+    const NON_CHAT = /^(tts-|dall-e|whisper|text-embedding|text-moderation|omni-moderation|davinci-|babbage-|gpt-image|computer-use|codex-)/;
+    return ((data?.data ?? []) as { id: string }[])
+      .map((m) => m.id)
+      .filter((id) => !NON_CHAT.test(id))
+      .sort();
   },
 };

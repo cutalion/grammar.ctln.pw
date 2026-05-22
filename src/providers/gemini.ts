@@ -2,8 +2,9 @@ import { ProviderAdapter } from './types';
 
 export const gemini: ProviderAdapter = {
   id: 'gemini',
-  label: 'Google (Gemini)',
+  label: 'Google',
   defaultModel: 'gemini-1.5-flash',
+  apiKeyUrl: 'https://aistudio.google.com/apikey',
   async *send({ config, system, messages, signal }) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.model)}:generateContent?key=${encodeURIComponent(config.apiKey)}`;
     const res = await fetch(url, {

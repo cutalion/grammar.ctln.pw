@@ -11,7 +11,7 @@ export function useCorrections() {
 
   useEffect(() => { saveHistory(items); }, [items]);
 
-  const correct = useCallback(async (input: string, config: ProviderConfig) => {
+  const correct = useCallback(async (input: string, config: ProviderConfig, systemPrompt?: string) => {
     const trimmed = input.trim();
     if (!trimmed) return;
 
@@ -33,7 +33,7 @@ export function useCorrections() {
       let full = '';
       for await (const chunk of adapter.send({
         config,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt?.trim() ? systemPrompt : SYSTEM_PROMPT,
         messages: [{ id, role: 'user', content: trimmed, createdAt: Date.now() }],
         signal: ctrl.signal,
       })) {

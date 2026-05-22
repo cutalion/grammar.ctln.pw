@@ -47,7 +47,7 @@ export default function App() {
 
   return (
     <div className="flex h-[100dvh] flex-col">
-      <header className="flex items-center justify-end gap-2 border-b border-neutral-200 bg-white px-3 py-2 dark:border-neutral-800 dark:bg-neutral-900">
+      <header className="flex items-center justify-end gap-2 border-b border-neutral-200 bg-white px-3 py-2 dark:border-gh-border-muted dark:bg-gh-surface">
         <ProviderPicker
           settings={settings}
           onSelect={(configId, model) => {
@@ -95,7 +95,7 @@ export default function App() {
         />
         <button
           onClick={() => setShowSettings(true)}
-          className="rounded-md border border-neutral-300 px-2 py-1 text-xs dark:border-neutral-700"
+          className="rounded-md border border-neutral-300 px-2 py-1 text-xs dark:border-gh-border"
         >
           Settings
         </button>
@@ -131,7 +131,7 @@ export default function App() {
           <button
             onClick={scrollToTop}
             aria-label="Scroll to top"
-            className="fixed bottom-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white text-lg shadow-lg transition hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:bg-neutral-800"
+            className="fixed bottom-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white text-lg shadow-lg transition hover:bg-neutral-100 dark:border-gh-border dark:bg-gh-surface dark:hover:bg-gh-overlay"
             style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
           >
             ↑
