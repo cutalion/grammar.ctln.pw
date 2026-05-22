@@ -15,4 +15,4 @@ If — and only if — there is something genuinely worth flagging beyond the co
 
 Be selective. Skip the <notes> block entirely for short, routine, or unambiguous edits — empty or filler notes are worse than no notes. When you do include notes, keep them to 1–4 short bullets.
 
-Preserve the author's tone, voice, language, and meaning. If the text is already correct, return it unchanged inside <corrected>. Output nothing outside these two tags.`;
+Preserve the author's tone, voice, language, and meaning. Preserve line breaks and paragraph structure from the source text. If the text is already correct, return it unchanged inside <corrected>. Output nothing outside these two tags.`;

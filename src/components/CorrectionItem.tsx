@@ -18,13 +18,12 @@ export function CorrectionItem({ item, onDelete }: Props) {
   const isDone = item.status === "done";
   const canDiff = isDone && hasMeaningfulDiff(item.input, item.output);
   // While pending or errored, the original is the only context the user has, so
-  // always show it. When done, defer to the explicit toggle (and only in clean
-  // mode — diff already represents the original via strikethroughs).
-  const inCleanWithChanges = isDone && canDiff && !showDiff;
+  // always show it. When done, show it only when the user toggles it on.
+  const canToggleOriginal = isDone && canDiff;
   const renderOriginal =
     item.status === "pending" ||
     item.status === "error" ||
-    (inCleanWithChanges && showOriginal);
+    (canToggleOriginal && showOriginal);
 
   useEffect(
     () => () => {
@@ -50,22 +49,22 @@ export function CorrectionItem({ item, onDelete }: Props) {
       <div className="flex border-b border-neutral-200 bg-neutral-50 dark:border-gh-border-muted dark:bg-gh-canvas">
         <header className="flex min-w-0 flex-1 items-center justify-between gap-3 px-3 py-1.5 text-[11px] text-neutral-500">
           <span className="truncate">{item.model && <>{item.model}</>}</span>
-          <div className="flex shrink-0 gap-3">
-            {inCleanWithChanges && (
-              <button
+          <div className="flex shrink-0 gap-1.5">
+            {canToggleOriginal && (
+              <ToggleButton
+                pressed={showOriginal}
                 onClick={() => setShowOriginal((v) => !v)}
-                className="hover:text-neutral-700 dark:hover:text-neutral-300"
               >
-                {showOriginal ? "Hide original" : "Show original"}
-              </button>
+                Original
+              </ToggleButton>
             )}
             {canDiff && (
-              <button
+              <ToggleButton
+                pressed={showDiff}
                 onClick={() => setShowDiff((v) => !v)}
-                className="hover:text-neutral-700 dark:hover:text-neutral-300"
               >
-                {showDiff ? "Hide diff" : "Diff"}
-              </button>
+                Diff
+              </ToggleButton>
             )}
           </div>
         </header>
@@ -156,6 +155,31 @@ export function CorrectionItem({ item, onDelete }: Props) {
         </div>
       )}
     </article>
+  );
+}
+
+function ToggleButton({
+  pressed,
+  onClick,
+  children,
+}: {
+  pressed: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      onClick={onClick}
+      className={`rounded px-2 py-0.5 transition ${
+        pressed
+          ? "bg-neutral-200 text-neutral-800 dark:bg-gh-overlay dark:text-neutral-200"
+          : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-gh-overlay/60 dark:hover:text-neutral-300"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
