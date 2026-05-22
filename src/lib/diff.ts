@@ -1,8 +1,6 @@
 export type DiffPart = { type: 'same' | 'add' | 'del'; text: string };
 
-/** Horizontal whitespace only — newlines are meaningful and never collapsed. */
-const isCollapsibleWhitespace = (s: string): boolean =>
-  /^\s*$/.test(s) && !/[\r\n]/.test(s);
+const isWhitespaceOnly = (s: string): boolean => /^\s+$/.test(s);
 
 /** Collapse runs of spaces/tabs but keep newlines so paragraph breaks compare correctly. */
 export function normalizeForDiff(s: string): string {
@@ -40,11 +38,12 @@ export function wordDiff(a: string, b: string): DiffPart[] {
   while (i > 0) { raw.unshift({ type: 'del', text: aw[i - 1] }); i--; }
   while (j > 0) { raw.unshift({ type: 'add', text: bw[j - 1] }); j--; }
 
-  // Suppress horizontal whitespace-only differences (e.g. "  " → " ").
-  // Keep newline changes visible — they are real edits, not noise.
+  // Suppress whitespace-only differences from the chipped output. The corrected
+  // side's whitespace still renders (as 'same'), so layout reflects the edit,
+  // but we avoid floating colored chips on bare spaces/newlines.
   const out: DiffPart[] = [];
   for (const p of raw) {
-    if (!isCollapsibleWhitespace(p.text)) {
+    if (!isWhitespaceOnly(p.text)) {
       out.push(p);
       continue;
     }
