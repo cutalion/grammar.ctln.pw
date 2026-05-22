@@ -16,10 +16,12 @@ Design language: minimalistic, mobile-first.
 npm run dev        # Vite dev server (default http://localhost:5173)
 npm run build      # tsc -b && vite build → dist/
 npm run preview    # serve dist/ for local production check
-npm run typecheck  # tsc -b --noEmit (no test runner is configured)
+npm run typecheck  # tsc -b --noEmit
+npm test           # vitest run — one-shot
+npm run test:watch # vitest watch mode
 ```
 
-There is intentionally no test suite, linter, or formatter yet. If you add one, update this section.
+Tests live next to the code they cover as `*.test.ts` (e.g. `src/lib/fuzzy.test.ts`). Only pure utility modules are covered today — there's no React component or integration testing setup. No linter or formatter is configured; if you add one, update this section.
 
 ## Architecture
 

@@ -1,5 +1,6 @@
 import { KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Settings } from '../storage/settings';
+import { fuzzyScore } from '../lib/fuzzy';
 
 interface Props {
   settings: Settings;
@@ -35,13 +36,17 @@ export function ProviderPicker({ settings, onSelect, onOpenSettings }: Props) {
   );
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     if (!q) return allOptions;
-    return allOptions.filter(
-      (o) =>
-        o.model.toLowerCase().includes(q) ||
-        (showProviderColumn && o.providerLabel.toLowerCase().includes(q)),
-    );
+    const scored = allOptions
+      .map((o) => {
+        const modelScore = fuzzyScore(q, o.model);
+        const labelScore = showProviderColumn ? fuzzyScore(q, o.providerLabel) : 0;
+        return { o, score: Math.max(modelScore, labelScore) };
+      })
+      .filter((s) => s.score > 0)
+      .sort((a, b) => b.score - a.score || a.o.model.length - b.o.model.length);
+    return scored.map((s) => s.o);
   }, [allOptions, query, showProviderColumn]);
 
   const active = settings.configs.find((c) => c.id === settings.activeConfigId) ?? settings.configs[0];
