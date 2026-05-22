@@ -7,9 +7,17 @@ export function normalizeForDiff(s: string): string {
   return s.trim().replace(/[^\S\n]+/g, ' ');
 }
 
+// Split into tokens of three flavors: whitespace runs, words (letters/digits
+// in any script — Cyrillic, etc.), and individual punctuation characters.
+// Punctuation is its own token so e.g. "apps." vs "apps?" shares the "apps"
+// anchor instead of being treated as two unrelated tokens.
+function tokenize(s: string): string[] {
+  return s.split(/(\s+|[^\p{L}\p{N}\s])/u).filter((t) => t.length > 0);
+}
+
 export function wordDiff(a: string, b: string): DiffPart[] {
-  const aw = a.split(/(\s+)/);
-  const bw = b.split(/(\s+)/);
+  const aw = tokenize(a);
+  const bw = tokenize(b);
   const n = aw.length;
   const m = bw.length;
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
