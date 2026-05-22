@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { useSettings } from './hooks/useSettings';
-import { useCorrections } from './hooks/useCorrections';
-import { Composer } from './components/Composer';
-import { CorrectionItem } from './components/CorrectionItem';
-import { SettingsPanel } from './components/SettingsPanel';
-import { ProviderPicker } from './components/ProviderPicker';
-import { Icon, IconButton, faArrowUp, faGear } from './components/Icon';
-import { adapters } from './providers';
+import { useEffect, useRef, useState } from "react";
+import { useSettings } from "./hooks/useSettings";
+import { useCorrections } from "./hooks/useCorrections";
+import { Composer } from "./components/Composer";
+import { CorrectionItem } from "./components/CorrectionItem";
+import { SettingsPanel } from "./components/SettingsPanel";
+import { ProviderPicker } from "./components/ProviderPicker";
+import { Icon, IconButton, faArrowUp, faGear } from "./components/Icon";
+import { adapters } from "./providers";
 
 const MODELS_STALE_MS = 24 * 60 * 60 * 1000;
 
@@ -20,7 +20,8 @@ export default function App() {
   const composerRef = useRef<HTMLDivElement>(null);
 
   const activeConfig =
-    settings.configs.find((c) => c.id === settings.activeConfigId) ?? settings.configs[0];
+    settings.configs.find((c) => c.id === settings.activeConfigId) ??
+    settings.configs[0];
 
   useEffect(() => {
     if (!composerRef.current || !mainRef.current) return;
@@ -41,7 +42,7 @@ export default function App() {
   };
 
   const scrollToTop = () => {
-    mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const reversed = [...items].reverse();
@@ -61,7 +62,9 @@ export default function App() {
             });
             const cfg = settings.configs.find((c) => c.id === configId);
             if (!cfg || !cfg.apiKey) return;
-            const stale = !cfg.modelsFetchedAt || Date.now() - cfg.modelsFetchedAt > MODELS_STALE_MS;
+            const stale =
+              !cfg.modelsFetchedAt ||
+              Date.now() - cfg.modelsFetchedAt > MODELS_STALE_MS;
             if (!stale) return;
             void adapters[cfg.providerId]
               .listModels(cfg)
@@ -94,27 +97,61 @@ export default function App() {
           }}
           onOpenSettings={() => setShowSettings(true)}
         />
-        <IconButton icon={faGear} label="Settings" onClick={() => setShowSettings(true)} />
+        <IconButton
+          icon={faGear}
+          label="Settings"
+          onClick={() => setShowSettings(true)}
+        />
       </header>
 
-      <main ref={mainRef} className="relative flex-1 overflow-y-auto px-3 py-4 sm:px-4">
+      <main
+        ref={mainRef}
+        className="relative flex-1 overflow-y-auto px-3 py-4 sm:px-4"
+      >
         <div className="mx-auto max-w-2xl space-y-4">
           <div ref={composerRef}>
             <Composer onSubmit={handleSubmit} disabled={!activeConfig} />
             {!activeConfig && (
-              <div className="pt-2 text-center text-xs text-neutral-500">
-                Add a provider in{' '}
-                <button onClick={() => setShowSettings(true)} className="underline">
+              <p className="pt-2 text-center text-xs leading-relaxed text-neutral-500">
+                Add an OpenAI-compatible provider in{" "}
+                <button
+                  type="button"
+                  onClick={() => setShowSettings(true)}
+                  className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
+                >
                   Settings
-                </button>{' '}
-                to get started.
-              </div>
+                </button>
+                .
+                <br />
+                <br />
+                For a free OpenRouter setup, copy base URL and model from{" "}
+                <a
+                  href="https://shir-man.com/free-llm/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
+                >
+                  this guide
+                </a>
+                ; or use the{" "}
+                <a
+                  href="https://openrouter.ai/openrouter/free/api"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-neutral-700 dark:hover:text-neutral-300"
+                >
+                  openrouter/free
+                </a>{" "}
+                model.
+                <br />A free API key requires signup at OpenRouter.
+              </p>
             )}
           </div>
 
           {items.length === 0 ? (
             <div className="pt-8 text-center text-sm text-neutral-500">
-              Paste or type text above to correct it. Each correction is saved locally.
+              Paste or type text above to correct it. Each correction is saved
+              locally.
             </div>
           ) : (
             reversed.map((item) => (
@@ -128,7 +165,7 @@ export default function App() {
             onClick={scrollToTop}
             aria-label="Scroll to top"
             className="fixed bottom-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white shadow-lg transition hover:bg-neutral-100 dark:border-gh-border dark:bg-gh-surface dark:hover:bg-gh-overlay"
-            style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+            style={{ bottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}
           >
             <Icon icon={faArrowUp} size="lg" className="text-neutral-400" />
           </button>
