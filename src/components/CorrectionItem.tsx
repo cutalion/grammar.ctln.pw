@@ -42,60 +42,71 @@ export function CorrectionItem({ item, onDelete }: Props) {
     copiedTimer.current = setTimeout(() => setCopied(null), 1500);
   };
 
+  const actionRail = "flex w-6 shrink-0 justify-center";
+  const actionIcon = { iconSize: "2xs" as const };
+
   return (
     <article className="overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-gh-border-muted dark:bg-gh-surface">
-      <header className="flex items-center justify-between border-b border-neutral-200 bg-neutral-50 px-3 py-1.5 text-[11px] text-neutral-500 dark:border-gh-border-muted dark:bg-gh-canvas">
-        <span className="truncate">{item.model && <>{item.model} · </>}</span>
-        <div className="flex shrink-0 gap-3">
-          {canDiff && (
-            <button
-              onClick={() => setShowDiff((v) => !v)}
-              className="hover:text-neutral-700 dark:hover:text-neutral-300"
-            >
-              {showDiff ? "Show clean" : "Show changes"}
-            </button>
-          )}
-          {inCleanWithChanges && (
-            <button
-              onClick={() => setShowOriginal((v) => !v)}
-              className="hover:text-neutral-700 dark:hover:text-neutral-300"
-            >
-              {showOriginal ? "Hide original" : "Show original"}
-            </button>
-          )}
+      <div className="flex border-b border-neutral-200 bg-neutral-50 dark:border-gh-border-muted dark:bg-gh-canvas">
+        <header className="flex min-w-0 flex-1 items-center justify-between gap-3 px-3 py-1.5 text-[11px] text-neutral-500">
+          <span className="truncate">{item.model && <>{item.model}</>}</span>
+          <div className="flex shrink-0 gap-3">
+            {inCleanWithChanges && (
+              <button
+                onClick={() => setShowOriginal((v) => !v)}
+                className="hover:text-neutral-700 dark:hover:text-neutral-300"
+              >
+                {showOriginal ? "Hide original" : "Show original"}
+              </button>
+            )}
+            {canDiff && (
+              <button
+                onClick={() => setShowDiff((v) => !v)}
+                className="hover:text-neutral-700 dark:hover:text-neutral-300"
+              >
+                {showDiff ? "Hide diff" : "Diff"}
+              </button>
+            )}
+          </div>
+        </header>
+        <div className={`${actionRail} items-center`}>
           <IconButton
             icon={faTrash}
             label="Delete"
             variant="danger"
             onClick={() => onDelete(item.id)}
+            {...actionIcon}
           />
         </div>
-      </header>
+      </div>
 
       {isDone && (
-        <div className="relative px-4 py-3 pr-7">
-          {item.output && (
-            <IconButton
-              icon={copied === "corrected" ? faCheck : faCopy}
-              label={copied === "corrected" ? "Copied" : "Copy corrected"}
-              variant="ghost"
-              iconSize="2xs"
-              className="absolute right-2 top-2"
-              onClick={() => copy("corrected")}
-            />
-          )}
-          {canDiff && showDiff ? (
-            <DiffView a={item.input} b={item.output} />
-          ) : (
-            <pre className="whitespace-pre-wrap break-words font-sans text-sm">
-              {item.output}
-            </pre>
-          )}
-          {!canDiff && (
-            <div className="mt-1 text-[11px] italic text-neutral-400">
-              No changes
+        <div className="flex">
+          <div className="min-w-0 flex-1 px-4 py-3">
+            {canDiff && showDiff ? (
+              <DiffView a={item.input} b={item.output} />
+            ) : (
+              <pre className="whitespace-pre-wrap break-words font-sans text-sm">
+                {item.output}
+              </pre>
+            )}
+            {!canDiff && (
+              <div className="mt-1 text-[11px] italic text-neutral-400">
+                No changes
+              </div>
+            )}
+          </div>
+          {item.output ? (
+            <div className={`${actionRail} items-start self-stretch pt-3`}>
+              <IconButton
+                icon={copied === "corrected" ? faCheck : faCopy}
+                label={copied === "corrected" ? "Copied" : "Copy corrected"}
+                variant="ghost"
+                onClick={() => copy("corrected")}
+                {...actionIcon}
+              />
             </div>
-          )}
+          ) : null}
         </div>
       )}
 
@@ -111,23 +122,26 @@ export function CorrectionItem({ item, onDelete }: Props) {
       )}
 
       {renderOriginal && (
-        <div className="relative border-t border-neutral-200 bg-neutral-50 px-4 py-3 pr-7 dark:border-gh-border-muted dark:bg-gh-canvas">
-          {item.input && (
-            <IconButton
-              icon={copied === "original" ? faCheck : faCopy}
-              label={copied === "original" ? "Copied" : "Copy original"}
-              variant="ghost"
-              iconSize="2xs"
-              className="absolute right-2 top-2"
-              onClick={() => copy("original")}
-            />
-          )}
-          <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-neutral-500">
-            Original
+        <div className="flex border-t border-neutral-200 bg-neutral-50 dark:border-gh-border-muted dark:bg-gh-canvas">
+          <div className="min-w-0 flex-1 px-4 py-3">
+            <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-neutral-500">
+              Original
+            </div>
+            <pre className="whitespace-pre-wrap break-words font-sans text-sm text-neutral-600 dark:text-neutral-400">
+              {item.input}
+            </pre>
           </div>
-          <pre className="whitespace-pre-wrap break-words font-sans text-sm text-neutral-600 dark:text-neutral-400">
-            {item.input}
-          </pre>
+          {item.input ? (
+            <div className={`${actionRail} items-start self-stretch pt-3`}>
+              <IconButton
+                icon={copied === "original" ? faCheck : faCopy}
+                label={copied === "original" ? "Copied" : "Copy original"}
+                variant="ghost"
+                onClick={() => copy("original")}
+                {...actionIcon}
+              />
+            </div>
+          ) : null}
         </div>
       )}
 
