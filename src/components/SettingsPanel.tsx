@@ -4,6 +4,7 @@ import { ProviderConfig, ProviderId } from '../providers/types';
 import { adapters } from '../providers';
 import { shortId } from '../lib/id';
 import { SYSTEM_PROMPT } from '../prompts/systemPrompt';
+import { Icon, IconButton, faPen, faTrash, faXmark } from './Icon';
 
 const AUTOLOAD_DEBOUNCE_MS = 600;
 
@@ -172,9 +173,7 @@ export function SettingsPanel({
       >
         <div className="flex items-center justify-between border-b border-neutral-200 p-4 dark:border-gh-border-muted">
           <h2 className="text-lg font-semibold">Settings</h2>
-          <button onClick={onClose} className="text-sm opacity-60 hover:opacity-100">
-            Close
-          </button>
+          <IconButton icon={faXmark} label="Close" variant="ghost" onClick={onClose} />
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
@@ -203,17 +202,30 @@ export function SettingsPanel({
                   ) : (
                     <span className="min-w-0 flex-1 truncate font-medium">{c.label}</span>
                   )}
-                  <div className="flex shrink-0 items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => toggleExpanded(c.id)}
-                      className="text-xs opacity-60 hover:opacity-100"
-                    >
-                      {expanded ? 'Collapse' : 'Edit'}
-                    </button>
-                    <button onClick={() => remove(c.id)} className="text-xs opacity-60 hover:opacity-100">
-                      Remove
-                    </button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {!expanded && (
+                      <IconButton
+                        icon={faPen}
+                        label="Edit"
+                        variant="ghost"
+                        onClick={() => toggleExpanded(c.id)}
+                      />
+                    )}
+                    {expanded && (
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(c.id)}
+                        className="text-xs opacity-60 hover:opacity-100"
+                      >
+                        Collapse
+                      </button>
+                    )}
+                    <IconButton
+                      icon={faTrash}
+                      label="Remove provider"
+                      variant="ghost"
+                      onClick={() => remove(c.id)}
+                    />
                   </div>
                 </div>
                 {expanded ? (
@@ -362,8 +374,9 @@ export function SettingsPanel({
                   }
                 }}
                 disabled={historyCount === 0}
-                className="shrink-0 rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 disabled:opacity-40 dark:border-gh-border dark:hover:bg-gh-overlay"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 disabled:opacity-40 dark:border-gh-border dark:hover:bg-gh-overlay"
               >
+                <Icon icon={faTrash} />
                 Clear history
               </button>
             </div>

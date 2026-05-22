@@ -5,6 +5,7 @@ import { Composer } from './components/Composer';
 import { CorrectionItem } from './components/CorrectionItem';
 import { SettingsPanel } from './components/SettingsPanel';
 import { ProviderPicker } from './components/ProviderPicker';
+import { Icon, IconButton, faArrowUp, faGear } from './components/Icon';
 import { adapters } from './providers';
 
 const MODELS_STALE_MS = 24 * 60 * 60 * 1000;
@@ -93,12 +94,7 @@ export default function App() {
           }}
           onOpenSettings={() => setShowSettings(true)}
         />
-        <button
-          onClick={() => setShowSettings(true)}
-          className="rounded-md border border-neutral-300 px-2 py-1 text-xs dark:border-gh-border"
-        >
-          Settings
-        </button>
+        <IconButton icon={faGear} label="Settings" onClick={() => setShowSettings(true)} />
       </header>
 
       <main ref={mainRef} className="relative flex-1 overflow-y-auto px-3 py-4 sm:px-4">
@@ -131,10 +127,10 @@ export default function App() {
           <button
             onClick={scrollToTop}
             aria-label="Scroll to top"
-            className="fixed bottom-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white text-lg shadow-lg transition hover:bg-neutral-100 dark:border-gh-border dark:bg-gh-surface dark:hover:bg-gh-overlay"
+            className="fixed bottom-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white shadow-lg transition hover:bg-neutral-100 dark:border-gh-border dark:bg-gh-surface dark:hover:bg-gh-overlay"
             style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
           >
-            ↑
+            <Icon icon={faArrowUp} size="lg" className="text-neutral-400" />
           </button>
         )}
       </main>

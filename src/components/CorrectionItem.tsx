@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Correction } from "../storage/corrections";
 import { hasMeaningfulDiff, wordDiff } from "../lib/diff";
+import { IconButton, faCheck, faCopy, faTrash } from "./Icon";
 
 interface Props {
   item: Correction;
@@ -62,55 +63,65 @@ export function CorrectionItem({ item, onDelete }: Props) {
               {showOriginal ? "Hide original" : "Show original"}
             </button>
           )}
-          {item.input && (
-            <button
-              onClick={() => copy("original")}
-              className="hover:text-neutral-700 dark:hover:text-neutral-300"
-            >
-              {copied === "original" ? "Copied!" : "Copy original"}
-            </button>
-          )}
-          {isDone && (
-            <button
-              onClick={() => copy("corrected")}
-              className="hover:text-neutral-700 dark:hover:text-neutral-300"
-            >
-              {copied === "corrected" ? "Copied!" : "Copy corrected"}
-            </button>
-          )}
-          <button
+          <IconButton
+            icon={faTrash}
+            label="Delete"
+            variant="danger"
             onClick={() => onDelete(item.id)}
-            className="hover:text-red-600"
-          >
-            Delete
-          </button>
+          />
         </div>
       </header>
 
-      <div className="px-4 py-3">
-        {item.status === "pending" && (
-          <div className="text-sm italic text-neutral-400">Correcting…</div>
-        )}
-        {item.status === "error" && (
-          <div className="text-sm text-red-600">{item.error}</div>
-        )}
-        {isDone &&
-          (canDiff && showDiff ? (
+      {isDone && (
+        <div className="relative px-4 py-3 pr-7">
+          {item.output && (
+            <IconButton
+              icon={copied === "corrected" ? faCheck : faCopy}
+              label={copied === "corrected" ? "Copied" : "Copy corrected"}
+              variant="ghost"
+              iconSize="2xs"
+              className="absolute right-2 top-2"
+              onClick={() => copy("corrected")}
+            />
+          )}
+          {canDiff && showDiff ? (
             <DiffView a={item.input} b={item.output} />
           ) : (
             <pre className="whitespace-pre-wrap break-words font-sans text-sm">
               {item.output}
             </pre>
-          ))}
-        {isDone && !canDiff && (
-          <div className="mt-1 text-[11px] italic text-neutral-400">
-            No changes
-          </div>
-        )}
-      </div>
+          )}
+          {!canDiff && (
+            <div className="mt-1 text-[11px] italic text-neutral-400">
+              No changes
+            </div>
+          )}
+        </div>
+      )}
+
+      {item.status === "pending" && (
+        <div className="px-4 py-3">
+          <div className="text-sm italic text-neutral-400">Correcting…</div>
+        </div>
+      )}
+      {item.status === "error" && (
+        <div className="px-4 py-3">
+          <div className="text-sm text-red-600">{item.error}</div>
+        </div>
+      )}
 
       {renderOriginal && (
-        <div className="border-t border-neutral-200 bg-neutral-50 px-4 py-3 dark:border-gh-border-muted dark:bg-gh-canvas">
+        <div className="relative border-t border-neutral-200 bg-neutral-50 px-4 py-3 pr-7 dark:border-gh-border-muted dark:bg-gh-canvas">
+          {item.input && (
+            <IconButton
+              icon={copied === "original" ? faCheck : faCopy}
+              label={copied === "original" ? "Copied" : "Copy original"}
+              variant="ghost"
+              iconSize="2xs"
+              className="absolute right-2 top-2"
+              onClick={() => copy("original")}
+            />
+          )}
           <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-neutral-500">
             Original
           </div>
