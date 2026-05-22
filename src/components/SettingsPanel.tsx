@@ -1,10 +1,17 @@
-import { Dispatch, ReactNode, SetStateAction, useEffect, useRef, useState } from 'react';
-import { Settings } from '../storage/settings';
-import { ProviderConfig, ProviderId } from '../providers/types';
-import { adapters } from '../providers';
-import { shortId } from '../lib/id';
-import { SYSTEM_PROMPT } from '../prompts/systemPrompt';
-import { Icon, IconButton, faPen, faTrash, faXmark } from './Icon';
+import {
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { Settings } from "../storage/settings";
+import { ProviderConfig, ProviderId } from "../providers/types";
+import { adapters } from "../providers";
+import { shortId } from "../lib/id";
+import { SYSTEM_PROMPT } from "../prompts/systemPrompt";
+import { Icon, IconButton, faPen, faTrash, faXmark } from "./Icon";
 
 const AUTOLOAD_DEBOUNCE_MS = 600;
 
@@ -29,7 +36,9 @@ export function SettingsPanel({
   onClearHistory,
 }: Props) {
   const [draft, setDraft] = useState<Settings>(settings);
-  const [modelsByConfig, setModelsByConfig] = useState<Record<string, ModelsState>>({});
+  const [modelsByConfig, setModelsByConfig] = useState<
+    Record<string, ModelsState>
+  >({});
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
     () => new Set(settings.configs.filter((c) => !c.apiKey).map((c) => c.id)),
   );
@@ -37,10 +46,10 @@ export function SettingsPanel({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   const add = (providerId: ProviderId) => {
@@ -50,9 +59,9 @@ export function SettingsPanel({
       id: shortId(),
       providerId,
       label: adapter.label,
-      apiKey: '',
+      apiKey: "",
       model: adapter.defaultModel,
-      baseURL: providerId === 'openai-compatible' ? 'https://' : undefined,
+      baseURL: providerId === "openai-compatible" ? "https://" : undefined,
     };
     setDraft({
       ...draft,
@@ -61,7 +70,11 @@ export function SettingsPanel({
     setExpandedIds((s) => new Set(s).add(cfg.id));
   };
 
-  const reconcileModel = (current: string, defaultModel: string, list: string[]) => {
+  const reconcileModel = (
+    current: string,
+    defaultModel: string,
+    list: string[],
+  ) => {
     if (list.length === 0) return current;
     if (list.includes(current)) return current;
     if (list.includes(defaultModel)) return defaultModel;
@@ -115,7 +128,10 @@ export function SettingsPanel({
       onChange((prev) => ({ ...prev, configs: prev.configs.map(patch) }));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      setModelsByConfig((m) => ({ ...m, [cfg.id]: { loading: false, error: msg } }));
+      setModelsByConfig((m) => ({
+        ...m,
+        [cfg.id]: { loading: false, error: msg },
+      }));
     }
   };
 
@@ -123,14 +139,16 @@ export function SettingsPanel({
   // doesn't fire on every keystroke. Keyed on (apiKey, baseURL) — re-fires only
   // when those change, not on unrelated edits like label.
   const autoLoadSigRef = useRef<Record<string, string>>({});
-  const autoLoadTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const autoLoadTimersRef = useRef<
+    Record<string, ReturnType<typeof setTimeout>>
+  >({});
   useEffect(() => {
     for (const c of draft.configs) {
       if (!c.apiKey) continue;
-      if (c.providerId === 'openai-compatible') {
+      if (c.providerId === "openai-compatible") {
         if (!c.baseURL || !/^https?:\/\/.+/.test(c.baseURL)) continue;
       }
-      const sig = `${c.apiKey}|${c.baseURL ?? ''}`;
+      const sig = `${c.apiKey}|${c.baseURL ?? ""}`;
       if (autoLoadSigRef.current[c.id] === sig) continue;
 
       if (autoLoadTimersRef.current[c.id]) {
@@ -143,7 +161,11 @@ export function SettingsPanel({
       }, AUTOLOAD_DEBOUNCE_MS);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft.configs.map((c) => `${c.id}|${c.apiKey}|${c.baseURL ?? ''}`).join('\n')]);
+  }, [
+    draft.configs
+      .map((c) => `${c.id}|${c.apiKey}|${c.baseURL ?? ""}`)
+      .join("\n"),
+  ]);
 
   useEffect(
     () => () => {
@@ -173,15 +195,20 @@ export function SettingsPanel({
       >
         <div className="flex items-center justify-between border-b border-neutral-200 p-4 dark:border-gh-border-muted">
           <h2 className="text-lg font-semibold">Settings</h2>
-          <IconButton icon={faXmark} label="Close" variant="ghost" onClick={onClose} />
+          <IconButton
+            icon={faXmark}
+            label="Close"
+            variant="ghost"
+            onClick={onClose}
+          />
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           <h3 className="text-sm font-semibold">Providers</h3>
           {draft.configs.length === 0 && (
             <p className="text-sm text-neutral-500">
-              Add a provider to get started. API keys are stored only in this browser's localStorage
-              and sent directly to the provider.
+              Add a provider to get started. API keys are stored only in this
+              browser's localStorage and sent directly to the provider.
             </p>
           )}
           {draft.configs.map((c) => {
@@ -200,7 +227,9 @@ export function SettingsPanel({
                       className="min-w-0 flex-1 bg-transparent font-medium focus:underline focus:outline-none"
                     />
                   ) : (
-                    <span className="min-w-0 flex-1 truncate font-medium">{c.label}</span>
+                    <span className="min-w-0 flex-1 truncate font-medium">
+                      {c.label}
+                    </span>
                   )}
                   <div className="flex shrink-0 items-center gap-2">
                     {!expanded && (
@@ -208,6 +237,7 @@ export function SettingsPanel({
                         icon={faPen}
                         label="Edit"
                         variant="ghost"
+                        iconSize="xs"
                         onClick={() => toggleExpanded(c.id)}
                       />
                     )}
@@ -224,22 +254,26 @@ export function SettingsPanel({
                       icon={faTrash}
                       label="Remove provider"
                       variant="ghost"
+                      iconSize="xs"
                       onClick={() => remove(c.id)}
                     />
                   </div>
                 </div>
                 {expanded ? (
-                  <div className="text-xs text-neutral-500">{adapters[c.providerId].label}</div>
+                  <div className="text-xs text-neutral-500">
+                    {adapters[c.providerId].label}
+                  </div>
                 ) : (
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500">
                     <span>{adapters[c.providerId].label}</span>
                     <span className="opacity-60">·</span>
-                    <span>{c.apiKey ? 'key set' : 'no key'}</span>
+                    <span>{c.apiKey ? "key set" : "no key"}</span>
                     {c.models && c.models.length > 0 && (
                       <>
                         <span className="opacity-60">·</span>
                         <span>
-                          {c.models.length} model{c.models.length === 1 ? '' : 's'}
+                          {c.models.length} model
+                          {c.models.length === 1 ? "" : "s"}
                         </span>
                       </>
                     )}
@@ -247,70 +281,76 @@ export function SettingsPanel({
                 )}
 
                 {expanded && (
-                <>
-                <Field
-                  label="API key"
-                  accessory={
-                    adapters[c.providerId].apiKeyUrl ? (
-                      <a
-                        href={adapters[c.providerId].apiKeyUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] text-neutral-500 underline hover:text-neutral-800 dark:hover:text-neutral-200"
-                      >
-                        Get key ↗
-                      </a>
-                    ) : null
-                  }
-                >
-                  <input
-                    type="password"
-                    value={c.apiKey}
-                    onChange={(e) => update(c.id, { apiKey: e.target.value })}
-                    className="input"
-                    autoComplete="off"
-                  />
-                </Field>
+                  <>
+                    <Field
+                      label="API key"
+                      accessory={
+                        adapters[c.providerId].apiKeyUrl ? (
+                          <a
+                            href={adapters[c.providerId].apiKeyUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] text-neutral-500 underline hover:text-neutral-800 dark:hover:text-neutral-200"
+                          >
+                            Get key ↗
+                          </a>
+                        ) : null
+                      }
+                    >
+                      <input
+                        type="password"
+                        value={c.apiKey}
+                        onChange={(e) =>
+                          update(c.id, { apiKey: e.target.value })
+                        }
+                        className="input"
+                        autoComplete="off"
+                      />
+                    </Field>
 
-                {c.providerId === 'openai-compatible' && (
-                  <Field label="Base URL">
-                    <input
-                      value={c.baseURL ?? ''}
-                      onChange={(e) => update(c.id, { baseURL: e.target.value })}
-                      className="input"
-                      placeholder="https://api.example.com/v1"
-                    />
-                  </Field>
-                )}
+                    {c.providerId === "openai-compatible" && (
+                      <Field label="Base URL">
+                        <input
+                          value={c.baseURL ?? ""}
+                          onChange={(e) =>
+                            update(c.id, { baseURL: e.target.value })
+                          }
+                          className="input"
+                          placeholder="https://api.example.com/v1"
+                        />
+                      </Field>
+                    )}
 
-                <Field label="Models">
-                  <div className="text-[11px] text-neutral-500">
-                    {models?.loading
-                      ? 'Loading…'
-                      : !c.apiKey
-                        ? 'Enter an API key to load models.'
-                        : c.models
-                          ? `${c.models.length} model${c.models.length === 1 ? '' : 's'} available${
-                              c.modelsFetchedAt
-                                ? ` · fetched ${new Date(c.modelsFetchedAt).toLocaleString()}`
-                                : ''
-                            } · pick one in the top bar.`
-                          : 'Loading…'}
-                  </div>
-                  {models?.error && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-red-600">{models.error}</span>
-                      <button
-                        type="button"
-                        onClick={() => loadModels(c)}
-                        className="rounded-md border border-neutral-300 px-2 py-0.5 text-[11px] hover:bg-neutral-100 dark:border-gh-border dark:hover:bg-gh-overlay"
-                      >
-                        Retry
-                      </button>
-                    </div>
-                  )}
-                </Field>
-                </>
+                    <Field label="Models">
+                      <div className="text-[11px] text-neutral-500">
+                        {models?.loading
+                          ? "Loading…"
+                          : !c.apiKey
+                            ? "Enter an API key to load models."
+                            : c.models
+                              ? `${c.models.length} model${c.models.length === 1 ? "" : "s"} available${
+                                  c.modelsFetchedAt
+                                    ? ` · fetched ${new Date(c.modelsFetchedAt).toLocaleString()}`
+                                    : ""
+                                } · pick one in the top bar.`
+                              : "Loading…"}
+                      </div>
+                      {models?.error && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-red-600">
+                            {models.error}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => loadModels(c)}
+                            className="rounded-md border border-neutral-300 px-2 py-0.5 text-[11px] hover:bg-neutral-100 dark:border-gh-border dark:hover:bg-gh-overlay"
+                          >
+                            Retry
+                          </button>
+                        </div>
+                      )}
+                    </Field>
+                  </>
                 )}
               </div>
             );
@@ -344,15 +384,17 @@ export function SettingsPanel({
             </div>
             <textarea
               value={draft.systemPrompt ?? SYSTEM_PROMPT}
-              onChange={(e) => setDraft({ ...draft, systemPrompt: e.target.value })}
+              onChange={(e) =>
+                setDraft({ ...draft, systemPrompt: e.target.value })
+              }
               rows={10}
               className="input font-mono text-xs"
               spellCheck={false}
             />
             <div className="text-[10px] text-neutral-400">
               {draft.systemPrompt === undefined
-                ? 'Using built-in default.'
-                : 'Custom prompt active. The model is expected to wrap output in <corrected>…</corrected> and optional <notes>…</notes> tags.'}
+                ? "Using built-in default."
+                : "Custom prompt active. The model is expected to wrap output in <corrected>…</corrected> and optional <notes>…</notes> tags."}
             </div>
           </div>
 
@@ -361,14 +403,14 @@ export function SettingsPanel({
             <div className="flex items-center justify-between gap-3">
               <div className="text-xs text-neutral-500">
                 {historyCount === 0
-                  ? 'No saved corrections.'
-                  : `${historyCount} correction${historyCount === 1 ? '' : 's'} saved in this browser.`}
+                  ? "No saved corrections."
+                  : `${historyCount} correction${historyCount === 1 ? "" : "s"} saved in this browser.`}
               </div>
               <button
                 type="button"
                 onClick={() => {
                   if (historyCount === 0) return;
-                  if (confirm('Clear all corrections?')) {
+                  if (confirm("Clear all corrections?")) {
                     onClearHistory();
                     onClose();
                   }
