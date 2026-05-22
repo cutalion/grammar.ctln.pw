@@ -43,6 +43,10 @@ export function SettingsPanel({
     () => new Set(settings.configs.filter((c) => !c.apiKey).map((c) => c.id)),
   );
   const usedProviderIds = new Set(draft.configs.map((c) => c.providerId));
+  // openai-compatible is a generic adapter for any OpenAI-shaped endpoint
+  // (OpenRouter alternates, LM Studio, vLLM, etc.), so the user may legitimately
+  // want several side-by-side. Other providers have a single canonical endpoint.
+  const canAddMultiple = (id: ProviderId) => id === "openai-compatible";
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -53,12 +57,18 @@ export function SettingsPanel({
   }, [onClose]);
 
   const add = (providerId: ProviderId) => {
-    if (usedProviderIds.has(providerId)) return;
+    if (usedProviderIds.has(providerId) && !canAddMultiple(providerId)) return;
     const adapter = adapters[providerId];
+    const sameProviderCount = draft.configs.filter(
+      (c) => c.providerId === providerId,
+    ).length;
     const cfg: ProviderConfig = {
       id: shortId(),
       providerId,
-      label: adapter.label,
+      label:
+        sameProviderCount === 0
+          ? adapter.label
+          : `${adapter.label} ${sameProviderCount + 1}`,
       apiKey: "",
       model: adapter.defaultModel,
       baseURL: providerId === "openai-compatible" ? "https://" : undefined,
@@ -357,7 +367,7 @@ export function SettingsPanel({
           })}
           <div className="flex flex-wrap gap-2 pt-2">
             {(Object.keys(adapters) as ProviderId[])
-              .filter((id) => !usedProviderIds.has(id))
+              .filter((id) => !usedProviderIds.has(id) || canAddMultiple(id))
               .map((id) => (
                 <button
                   key={id}
