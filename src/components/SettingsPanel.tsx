@@ -226,11 +226,16 @@ export function SettingsPanel({
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           <div className="space-y-2 border-b border-neutral-200 pb-4 dark:border-gh-border-muted">
             <h3 className="text-sm font-semibold">Appearance</h3>
-            <div className="inline-flex rounded-md border border-neutral-300 p-0.5 dark:border-gh-border">
+            <div
+              role="group"
+              aria-label="Theme"
+              className="inline-flex rounded-md border border-neutral-300 p-0.5 dark:border-gh-border"
+            >
               {(["system", "light", "dark"] as ThemeMode[]).map((mode) => (
                 <button
                   key={mode}
                   type="button"
+                  aria-pressed={theme === mode}
                   onClick={() => setTheme(mode)}
                   className={
                     "rounded px-3 py-1 text-xs capitalize transition " +
