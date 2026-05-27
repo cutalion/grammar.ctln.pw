@@ -133,7 +133,7 @@ export function ProviderPicker({ settings, onSelect, onOpenSettings }: Props) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-30 mt-1 w-80 max-w-[90vw] overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-lg dark:border-gh-border dark:bg-gh-surface">
+        <div className="absolute right-0 top-full z-30 mt-1 w-80 max-w-[calc(100vw-4rem)] overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-lg dark:border-gh-border dark:bg-gh-surface">
           <input
             ref={inputRef}
             type="text"
