@@ -12,7 +12,9 @@
           var prefersDark = window.matchMedia(
             '(prefers-color-scheme: dark)',
           ).matches;
-          var dark = mode === 'dark' || (mode === 'system' && prefersDark);
+          // Anything other than 'dark'/'light' resolves to system, matching
+          // normalizeTheme in src/storage/settings.ts.
+          var dark = mode === 'dark' || (mode !== 'light' && prefersDark);
           if (dark) document.documentElement.classList.add('dark');
           document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
         } catch (e) {}
