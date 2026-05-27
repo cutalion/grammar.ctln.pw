@@ -11,6 +11,10 @@ export {
   faArrowUp,
   faCopy,
   faCheck,
+  faCircleHalfStroke,
+  faDesktop,
+  faSun,
+  faMoon,
 } from '@fortawesome/free-solid-svg-icons';
 
 interface IconProps extends Omit<FontAwesomeIconProps, 'icon'> {

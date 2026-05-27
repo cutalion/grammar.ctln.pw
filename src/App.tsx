@@ -6,6 +6,7 @@ import { Composer } from "./components/Composer";
 import { CorrectionItem } from "./components/CorrectionItem";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { ProviderPicker } from "./components/ProviderPicker";
+import { ThemePicker } from "./components/ThemePicker";
 import { Icon, IconButton, faArrowUp, faGear } from "./components/Icon";
 import { adapters } from "./providers";
 
@@ -103,6 +104,10 @@ export default function App() {
           icon={faGear}
           label="Settings"
           onClick={() => setShowSettings(true)}
+        />
+        <ThemePicker
+          value={settings.theme ?? "system"}
+          onChange={(theme) => setSettings({ ...settings, theme })}
         />
       </header>
 
