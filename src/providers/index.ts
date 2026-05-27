@@ -12,7 +12,3 @@ export const adapters: Record<ProviderId, ProviderAdapter> = {
   'openai-compatible': openaiCompatible,
   openrouter,
 };
-
-export function getAdapter(id: ProviderId): ProviderAdapter {
-  return adapters[id];
-}

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Correction, loadHistory, saveHistory } from '../storage/corrections';
 import { ProviderConfig } from '../providers/types';
-import { getAdapter } from '../providers';
+import { adapters } from '../providers';
 import { SYSTEM_PROMPT } from '../prompts/systemPrompt';
 import { parseOutput } from '../lib/parseOutput';
 import { shortId } from '../lib/id';
@@ -10,6 +10,13 @@ export function useCorrections() {
   const [items, setItems] = useState<Correction[]>(() => loadHistory());
 
   useEffect(() => { saveHistory(items); }, [items]);
+
+  // Abort any in-flight requests on unmount so their fetches don't outlive the
+  // hook and try to update state that's gone.
+  const inFlight = useRef<Set<AbortController>>(new Set());
+  useEffect(() => () => {
+    for (const ctrl of inFlight.current) ctrl.abort();
+  }, []);
 
   const correct = useCallback(async (input: string, config: ProviderConfig, systemPrompt?: string) => {
     const trimmed = input.trim();
@@ -28,8 +35,9 @@ export function useCorrections() {
     setItems((prev) => [...prev, created]);
 
     const ctrl = new AbortController();
+    inFlight.current.add(ctrl);
     try {
-      const adapter = getAdapter(config.providerId);
+      const adapter = adapters[config.providerId];
       let full = '';
       for await (const chunk of adapter.send({
         config,
@@ -48,12 +56,18 @@ export function useCorrections() {
         ),
       );
     } catch (e: unknown) {
+      // An abort is our own unmount cleanup, not a failure — leave the item
+      // pending in localStorage; loadHistory rewrites leftover pending items to
+      // "Interrupted" on the next load.
+      if (e instanceof DOMException && e.name === 'AbortError') return;
       const err = e as { message?: string };
       setItems((prev) =>
         prev.map((c) =>
           c.id === id ? { ...c, status: 'error', error: err?.message ?? String(e) } : c,
         ),
       );
+    } finally {
+      inFlight.current.delete(ctrl);
     }
   }, []);
 

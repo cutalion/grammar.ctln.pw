@@ -25,7 +25,7 @@ export const openaiCompatible: ProviderAdapter = {
       }),
       signal,
     });
-    if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+    if (!res.ok) throw new Error(`OpenAI-compatible ${res.status}: ${await res.text()}`);
     const data = await res.json();
     yield data?.choices?.[0]?.message?.content ?? '';
   },
@@ -33,7 +33,7 @@ export const openaiCompatible: ProviderAdapter = {
     const headers: Record<string, string> = {};
     if (config.apiKey) headers.authorization = `Bearer ${config.apiKey}`;
     const res = await fetch(`${baseFor(config)}/models`, { headers });
-    if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+    if (!res.ok) throw new Error(`OpenAI-compatible ${res.status}: ${await res.text()}`);
     const data = await res.json();
     return ((data?.data ?? []) as { id: string }[]).map((m) => m.id).sort();
   },

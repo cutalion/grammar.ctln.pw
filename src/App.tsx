@@ -9,6 +9,7 @@ import { ProviderPicker } from "./components/ProviderPicker";
 import { ThemePicker } from "./components/ThemePicker";
 import { Icon, IconButton, faArrowUp, faGear } from "./components/Icon";
 import { adapters } from "./providers";
+import { getActiveConfig } from "./storage/settings";
 
 const MODELS_STALE_MS = 24 * 60 * 60 * 1000;
 
@@ -22,9 +23,7 @@ export default function App() {
   const mainRef = useRef<HTMLElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
 
-  const activeConfig =
-    settings.configs.find((c) => c.id === settings.activeConfigId) ??
-    settings.configs[0];
+  const activeConfig = getActiveConfig(settings);
 
   useEffect(() => {
     if (!composerRef.current || !mainRef.current) return;

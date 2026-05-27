@@ -49,11 +49,11 @@ export function SettingsPanel({
   const canAddMultiple = (id: ProviderId) => id === "openai-compatible";
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
+    const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
   const add = (providerId: ProviderId) => {
@@ -109,6 +109,7 @@ export function SettingsPanel({
 
   const remove = (id: string) => {
     setDraft({
+      ...draft,
       configs: draft.configs.filter((c) => c.id !== id),
       activeConfigId: draft.activeConfigId === id ? null : draft.activeConfigId,
     });
@@ -148,7 +149,9 @@ export function SettingsPanel({
   // Auto-load models when credentials change. Debounced so typing/pasting a key
   // doesn't fire on every keystroke. Keyed on (apiKey, baseURL) — re-fires only
   // when those change, not on unrelated edits like label.
-  const autoLoadSigRef = useRef<Record<string, string>>({});
+  // `lastLoadedKeyRef` remembers the last credential fingerprint we loaded for
+  // each config so we don't re-fetch when it hasn't changed.
+  const lastLoadedKeyRef = useRef<Record<string, string>>({});
   const autoLoadTimersRef = useRef<
     Record<string, ReturnType<typeof setTimeout>>
   >({});
@@ -158,15 +161,16 @@ export function SettingsPanel({
       if (c.providerId === "openai-compatible") {
         if (!c.baseURL || !/^https?:\/\/.+/.test(c.baseURL)) continue;
       }
-      const sig = `${c.apiKey}|${c.baseURL ?? ""}`;
-      if (autoLoadSigRef.current[c.id] === sig) continue;
+      // Fingerprint the credentials so we only re-fire when auth changes.
+      const credentialKey = `${c.apiKey}|${c.baseURL ?? ""}`;
+      if (lastLoadedKeyRef.current[c.id] === credentialKey) continue;
 
       if (autoLoadTimersRef.current[c.id]) {
         clearTimeout(autoLoadTimersRef.current[c.id]);
       }
       const cfg = c;
       autoLoadTimersRef.current[cfg.id] = setTimeout(() => {
-        autoLoadSigRef.current[cfg.id] = sig;
+        lastLoadedKeyRef.current[cfg.id] = credentialKey;
         void loadModels(cfg);
       }, AUTOLOAD_DEBOUNCE_MS);
     }
@@ -190,7 +194,15 @@ export function SettingsPanel({
       draft.activeConfigId && configs.some((c) => c.id === draft.activeConfigId)
         ? draft.activeConfigId
         : null;
-    onChange({ ...draft, configs, activeConfigId });
+    // Commit only the fields this panel owns, merged onto the latest settings —
+    // theme lives in the top bar now, so the draft snapshot taken at open time
+    // must not clobber a theme change made while the panel was open.
+    onChange((prev) => ({
+      ...prev,
+      configs,
+      activeConfigId,
+      systemPrompt: draft.systemPrompt,
+    }));
     onClose();
   };
 
@@ -333,17 +345,7 @@ export function SettingsPanel({
 
                     <Field label="Models">
                       <div className="text-[11px] text-neutral-500">
-                        {models?.loading
-                          ? "Loading…"
-                          : !c.apiKey
-                            ? "Enter an API key to load models."
-                            : c.models
-                              ? `${c.models.length} model${c.models.length === 1 ? "" : "s"} available${
-                                  c.modelsFetchedAt
-                                    ? ` · fetched ${new Date(c.modelsFetchedAt).toLocaleString()}`
-                                    : ""
-                                } · pick one in the top bar.`
-                              : "Loading…"}
+                        {modelsStatusText(c, models)}
                       </div>
                       {models?.error && (
                         <div className="flex items-center gap-2">
@@ -449,6 +451,21 @@ export function SettingsPanel({
       </div>
     </div>
   );
+}
+
+// The gray descriptive line under "Models". The actual error text + Retry live
+// in their own block below, so an error here reads as "couldn't load", not a
+// stuck "Loading…".
+function modelsStatusText(c: ProviderConfig, state: ModelsState | undefined): string {
+  if (!c.apiKey) return "Enter an API key to load models.";
+  if (state?.loading) return "Loading…";
+  if (state?.error) return "Couldn't load models.";
+  if (!c.models) return "Loading…";
+  const fetched = c.modelsFetchedAt
+    ? ` · fetched ${new Date(c.modelsFetchedAt).toLocaleString()}`
+    : "";
+  const plural = c.models.length === 1 ? "" : "s";
+  return `${c.models.length} model${plural} available${fetched} · pick one in the top bar.`;
 }
 
 function Field({

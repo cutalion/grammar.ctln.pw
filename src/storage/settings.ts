@@ -10,7 +10,11 @@ export interface Settings {
   theme?: ThemeMode;
 }
 
-const empty: Settings = { configs: [], activeConfigId: null };
+// Fresh object per call — never hand out a shared mutable default that
+// callers (or React's state initialiser) could alias.
+function emptySettings(): Settings {
+  return { configs: [], activeConfigId: null };
+}
 
 function normalizeTheme(value: unknown): ThemeMode {
   return value === 'light' || value === 'dark' ? value : 'system';
@@ -19,7 +23,7 @@ function normalizeTheme(value: unknown): ThemeMode {
 export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return empty;
+    if (!raw) return emptySettings();
     const parsed = JSON.parse(raw) as Settings;
     return {
       configs: parsed.configs ?? [],
@@ -28,10 +32,16 @@ export function loadSettings(): Settings {
       theme: normalizeTheme(parsed.theme),
     };
   } catch {
-    return empty;
+    return emptySettings();
   }
 }
 
 export function saveSettings(s: Settings) {
   localStorage.setItem(KEY, JSON.stringify(s));
+}
+
+// The active config, falling back to the first one when no id matches (or the
+// stored id is stale). Shared so App and the picker can't drift apart.
+export function getActiveConfig(s: Settings): ProviderConfig | undefined {
+  return s.configs.find((c) => c.id === s.activeConfigId) ?? s.configs[0];
 }

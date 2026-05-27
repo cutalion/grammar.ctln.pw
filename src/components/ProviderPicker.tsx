@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Settings } from "../storage/settings";
+import { getActiveConfig, Settings } from "../storage/settings";
 import { fuzzyScore } from "../lib/fuzzy";
 
 interface Props {
@@ -31,7 +31,15 @@ export function ProviderPicker({ settings, onSelect, onOpenSettings }: Props) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-  const [menuStyle, setMenuStyle] = useState<CSSProperties>();
+  // Start fixed (out of flow) and hidden: before the first `compute()` runs, an
+  // unpositioned menu would be `position: static`, sit in normal flow, and widen
+  // the `.relative` wrapper — shifting the trigger and corrupting the very
+  // getBoundingClientRect() we measure against. `visibility: hidden` avoids a
+  // flash at the pre-measurement spot until `compute()` sets the real offsets.
+  const [menuStyle, setMenuStyle] = useState<CSSProperties>({
+    position: "fixed",
+    visibility: "hidden",
+  });
 
   const allOptions = useMemo<Option[]>(() => {
     return settings.configs.flatMap((c) => {
@@ -43,7 +51,7 @@ export function ProviderPicker({ settings, onSelect, onOpenSettings }: Props) {
         model: m,
       }));
     });
-  }, [settings]);
+  }, [settings.configs]);
 
   const showProviderColumn = useMemo(
     () => new Set(allOptions.map((o) => o.configId)).size > 1,
@@ -66,9 +74,7 @@ export function ProviderPicker({ settings, onSelect, onOpenSettings }: Props) {
     return scored.map((s) => s.o);
   }, [allOptions, query, showProviderColumn]);
 
-  const active =
-    settings.configs.find((c) => c.id === settings.activeConfigId) ??
-    settings.configs[0];
+  const active = getActiveConfig(settings);
 
   useEffect(() => {
     if (!open) return;

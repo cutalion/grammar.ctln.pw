@@ -32,8 +32,10 @@ export const gemini: ProviderAdapter = {
     if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
     const data = await res.json();
     type GModel = { name: string; supportedGenerationMethods?: string[] };
+    // Keep only chat-capable models. Entries missing the field are dropped;
+    // the Gemini API currently always populates it for usable models.
     return ((data?.models ?? []) as GModel[])
-      .filter((m) => !m.supportedGenerationMethods || m.supportedGenerationMethods.includes('generateContent'))
+      .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
       .map((m) => m.name.replace(/^models\//, ''))
       .sort();
   },

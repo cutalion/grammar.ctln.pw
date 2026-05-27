@@ -17,7 +17,7 @@ export function Composer({ onSubmit, disabled }: Props) {
     textareaRef.current?.focus();
   };
 
-  const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       submit();
@@ -30,7 +30,7 @@ export function Composer({ onSubmit, disabled }: Props) {
         ref={textareaRef}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        onKeyDown={onKey}
+        onKeyDown={onKeyDown}
         placeholder="Paste or type text to correct…"
         rows={4}
         className="w-full resize-y bg-transparent px-4 py-3 text-sm focus:outline-none"

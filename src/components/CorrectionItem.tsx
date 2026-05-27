@@ -20,10 +20,7 @@ export function CorrectionItem({ item, onDelete }: Props) {
   // While pending or errored, the original is the only context the user has, so
   // always show it. When done, show it only when the user toggles it on.
   const canToggleOriginal = isDone && canDiff;
-  const renderOriginal =
-    item.status === "pending" ||
-    item.status === "error" ||
-    (canToggleOriginal && showOriginal);
+  const renderOriginal = !isDone || (canToggleOriginal && showOriginal);
 
   useEffect(
     () => () => {
@@ -35,10 +32,17 @@ export function CorrectionItem({ item, onDelete }: Props) {
   const copy = (kind: CopiedKind) => {
     const text = kind === "corrected" ? item.output : item.input;
     if (!text) return;
-    void navigator.clipboard?.writeText(text);
-    setCopied(kind);
-    if (copiedTimer.current) clearTimeout(copiedTimer.current);
-    copiedTimer.current = setTimeout(() => setCopied(null), 1500);
+    // Only flash "Copied" once the write actually succeeds — otherwise the UI
+    // would lie when the clipboard API is unavailable or permission is denied.
+    const write = navigator.clipboard?.writeText(text);
+    if (!write) return;
+    void write
+      .then(() => {
+        setCopied(kind);
+        if (copiedTimer.current) clearTimeout(copiedTimer.current);
+        copiedTimer.current = setTimeout(() => setCopied(null), 1500);
+      })
+      .catch(() => {});
   };
 
   const actionRail = "flex w-6 shrink-0 justify-center";
@@ -48,7 +52,7 @@ export function CorrectionItem({ item, onDelete }: Props) {
     <article className="overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-gh-border-muted dark:bg-gh-surface">
       <div className="flex border-b border-neutral-200 bg-neutral-50 dark:border-gh-border-muted dark:bg-gh-canvas">
         <header className="flex min-w-0 flex-1 items-center justify-between gap-3 px-3 py-1.5 text-[11px] text-neutral-500">
-          <span className="truncate">{item.model && <>{item.model}</>}</span>
+          <span className="truncate">{item.model}</span>
           <div className="flex shrink-0 gap-1.5">
             {canToggleOriginal && (
               <ToggleButton
