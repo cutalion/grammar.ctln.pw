@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSettings } from "./hooks/useSettings";
 import { useCorrections } from "./hooks/useCorrections";
+import { useTheme } from "./hooks/useTheme";
 import { Composer } from "./components/Composer";
 import { CorrectionItem } from "./components/CorrectionItem";
 import { SettingsPanel } from "./components/SettingsPanel";
@@ -15,6 +16,7 @@ export default function App() {
   const { items, correct, remove, clear } = useCorrections();
   const [showSettings, setShowSettings] = useState(false);
   const [composerOutOfView, setComposerOutOfView] = useState(false);
+  useTheme(settings.theme ?? "system");
 
   const mainRef = useRef<HTMLElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
