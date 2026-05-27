@@ -8,6 +8,7 @@ import {
 } from "react";
 import { Settings } from "../storage/settings";
 import { ProviderConfig, ProviderId } from "../providers/types";
+import { ThemeMode } from "../lib/theme";
 import { adapters } from "../providers";
 import { shortId } from "../lib/id";
 import { SYSTEM_PROMPT } from "../prompts/systemPrompt";
@@ -105,6 +106,15 @@ export function SettingsPanel({
       ...draft,
       configs: draft.configs.map((c) => (c.id === id ? { ...c, ...patch } : c)),
     });
+  };
+
+  const theme: ThemeMode = draft.theme ?? "system";
+  // Theme is app chrome, not draft form data: update the draft (so Save does
+  // not revert it) AND commit immediately so it applies live and survives
+  // Cancel — the same bypass loadModels uses for the models cache.
+  const setTheme = (next: ThemeMode) => {
+    setDraft((d) => ({ ...d, theme: next }));
+    onChange((prev) => ({ ...prev, theme: next }));
   };
 
   const remove = (id: string) => {
@@ -214,6 +224,26 @@ export function SettingsPanel({
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
+          <div className="space-y-2 border-b border-neutral-200 pb-4 dark:border-gh-border-muted">
+            <h3 className="text-sm font-semibold">Appearance</h3>
+            <div className="inline-flex rounded-md border border-neutral-300 p-0.5 dark:border-gh-border">
+              {(["system", "light", "dark"] as ThemeMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setTheme(mode)}
+                  className={
+                    "rounded px-3 py-1 text-xs capitalize transition " +
+                    (theme === mode
+                      ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                      : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-gh-overlay")
+                  }
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
+          </div>
           <h3 className="text-sm font-semibold">Providers</h3>
           {draft.configs.length === 0 && (
             <p className="text-sm text-neutral-500">
