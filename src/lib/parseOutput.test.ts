@@ -70,6 +70,8 @@ I went to the store.
 
   it('does not match the corrected tag when asked for the suggested tag', () => {
     const raw = '<corrected>grammar only</corrected>';
-    expect(parseOutput(raw, 'suggested')).toEqual({ corrected: 'grammar only' });
+    expect(parseOutput(raw, 'suggested')).toEqual({
+      corrected: '<corrected>grammar only</corrected>',
+    });
   });
 });
