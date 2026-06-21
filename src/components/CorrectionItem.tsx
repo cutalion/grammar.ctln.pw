@@ -9,15 +9,18 @@ interface Props {
 }
 
 type CopiedKind = "corrected" | "original" | "suggested";
-type Tab = "corrected" | "suggestions";
+type Tab = "corrected" | "suggestions" | "original";
 type ActionIcon = { iconSize: "2xs" };
 
-// The active tab resolves to one of these. Both tabs render through the same
+// The active tab resolves to one of these. Every tab renders through the same
 // content/diff/notes machinery — they only differ in which text is primary,
-// what it diffs against, and the labels for each state.
+// whether (and against what) it diffs, and the labels for each state.
 interface ViewModel {
   status: "pending" | "done" | "error" | "absent";
   text: string;
+  // Whether this view supports diffing at all. The Original view is the raw
+  // input — there is nothing to diff it against, so it always renders plain.
+  diffable: boolean;
   // Diff base: the original input for the corrected view, the corrected output
   // for the suggestions view. `baseReady` is false while that base is still
   // pending (the suggestion can finish before the correction does).
@@ -38,7 +41,6 @@ const actionIcon: ActionIcon = { iconSize: "2xs" };
 export function CorrectionItem({ item, onDelete }: Props) {
   const [tab, setTab] = useState<Tab>("corrected");
   const [showDiff, setShowDiff] = useState(true);
-  const [showOriginal, setShowOriginal] = useState(false);
   const [copied, setCopied] = useState<CopiedKind | null>(null);
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -70,72 +72,39 @@ export function CorrectionItem({ item, onDelete }: Props) {
       .catch(() => {});
   };
 
-  const suggestion = item.suggestion;
-  const view: ViewModel =
-    tab === "corrected"
-      ? {
-          status: item.status,
-          text: item.output,
-          base: item.input,
-          baseReady: true,
-          error: item.error,
-          notes: item.notes,
-          copyKind: "corrected",
-          copyLabel: "Copy corrected",
-          pendingLabel: "Correcting…",
-          emptyHint: "No changes",
-          absentLabel: "",
-        }
-      : {
-          status: suggestion ? suggestion.status : "absent",
-          text: suggestion?.output ?? "",
-          base: item.output,
-          baseReady: item.status === "done",
-          error: suggestion?.error,
-          notes: suggestion?.notes,
-          copyKind: "suggested",
-          copyLabel: "Copy suggested",
-          pendingLabel: "Generating suggestions…",
-          emptyHint: "No suggestions",
-          absentLabel: "No suggestions available.",
-        };
+  const view = resolveView(item, tab);
 
   return (
     <article className="overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-gh-border-muted dark:bg-gh-surface">
       <div className="flex border-b border-neutral-200 bg-neutral-50 dark:border-gh-border-muted dark:bg-gh-canvas">
-        <header className="flex min-w-0 flex-1 items-start justify-between gap-x-3 px-3 py-1.5 text-[11px] text-neutral-500">
-          <span className="truncate pt-0.5">{item.model}</span>
-          <div className="flex shrink-0 flex-col items-end gap-1">
-            <div className="flex flex-wrap justify-end gap-1.5">
-              <SegButton
-                emphasis
-                pressed={tab === "corrected"}
-                onClick={() => setTab("corrected")}
-              >
-                Corrected
-              </SegButton>
-              <SegButton
-                emphasis
-                pressed={tab === "suggestions"}
-                onClick={() => setTab("suggestions")}
-              >
-                Suggestions
-              </SegButton>
-            </div>
-            <div className="flex flex-wrap justify-end gap-1.5">
-              <SegButton
-                pressed={showOriginal}
-                onClick={() => setShowOriginal((v) => !v)}
-              >
-                Original
-              </SegButton>
-              <SegButton
-                pressed={showDiff}
-                onClick={() => setShowDiff((v) => !v)}
-              >
-                Diff
-              </SegButton>
-            </div>
+        <header className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-1.5 text-[11px] text-neutral-500">
+          <div className="flex flex-wrap gap-1.5">
+            <SegButton
+              emphasis
+              pressed={tab === "corrected"}
+              onClick={() => setTab("corrected")}
+            >
+              Corrected
+            </SegButton>
+            <SegButton
+              emphasis
+              pressed={tab === "suggestions"}
+              onClick={() => setTab("suggestions")}
+            >
+              Suggestions
+            </SegButton>
+            <SegButton
+              emphasis
+              pressed={tab === "original"}
+              onClick={() => setTab("original")}
+            >
+              Original
+            </SegButton>
+          </div>
+          <div className="ml-auto flex gap-1.5">
+            <SegButton pressed={showDiff} onClick={() => setShowDiff((v) => !v)}>
+              Diff
+            </SegButton>
           </div>
         </header>
         <div className={`${actionRail} items-center`}>
@@ -158,31 +127,62 @@ export function CorrectionItem({ item, onDelete }: Props) {
 
       {view.status === "done" && view.notes && <NotesPanel notes={view.notes} />}
 
-      {showOriginal && (
-        <div className="flex border-t border-neutral-200 bg-neutral-50 dark:border-gh-border-muted dark:bg-gh-canvas">
-          <div className="min-w-0 flex-1 px-4 py-3">
-            <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-neutral-500">
-              Original
-            </div>
-            <pre className="whitespace-pre-wrap break-words font-sans text-sm text-neutral-600 dark:text-neutral-400">
-              {item.input}
-            </pre>
-          </div>
-          {item.input ? (
-            <div className={`${actionRail} items-start self-stretch pt-3`}>
-              <IconButton
-                icon={copied === "original" ? faCheck : faCopy}
-                label={copied === "original" ? "Copied" : "Copy original"}
-                variant="ghost"
-                onClick={() => copy("original")}
-                {...actionIcon}
-              />
-            </div>
-          ) : null}
-        </div>
-      )}
+      {item.model ? (
+        <footer className="border-t border-neutral-200 bg-neutral-50 px-3 py-1.5 text-[11px] text-neutral-500 dark:border-gh-border-muted dark:bg-gh-canvas">
+          <span className="block truncate">{item.model}</span>
+        </footer>
+      ) : null}
     </article>
   );
+}
+
+function resolveView(item: Correction, tab: Tab): ViewModel {
+  if (tab === "corrected") {
+    return {
+      status: item.status,
+      text: item.output,
+      diffable: true,
+      base: item.input,
+      baseReady: true,
+      error: item.error,
+      notes: item.notes,
+      copyKind: "corrected",
+      copyLabel: "Copy corrected",
+      pendingLabel: "Correcting…",
+      emptyHint: "No changes",
+      absentLabel: "",
+    };
+  }
+  if (tab === "suggestions") {
+    const suggestion = item.suggestion;
+    return {
+      status: suggestion ? suggestion.status : "absent",
+      text: suggestion?.output ?? "",
+      diffable: true,
+      base: item.output,
+      baseReady: item.status === "done",
+      error: suggestion?.error,
+      notes: suggestion?.notes,
+      copyKind: "suggested",
+      copyLabel: "Copy suggested",
+      pendingLabel: "Generating suggestions…",
+      emptyHint: "No suggestions",
+      absentLabel: "No suggestions available.",
+    };
+  }
+  // Original: the raw input, always available and never diffed.
+  return {
+    status: "done",
+    text: item.input,
+    diffable: false,
+    base: item.input,
+    baseReady: false,
+    copyKind: "original",
+    copyLabel: "Copy original",
+    pendingLabel: "",
+    emptyHint: "",
+    absentLabel: "",
+  };
 }
 
 function PrimaryContent({
@@ -206,8 +206,9 @@ function PrimaryContent({
     return <StatusLine error>{view.error}</StatusLine>;
   }
 
-  const canDiff = view.baseReady && hasMeaningfulDiff(view.base, view.text);
-  const noChanges = view.baseReady && !canDiff;
+  const canDiff =
+    view.diffable && view.baseReady && hasMeaningfulDiff(view.base, view.text);
+  const noChanges = view.diffable && view.baseReady && !canDiff;
 
   return (
     <div className="flex">
@@ -273,9 +274,9 @@ function NotesPanel({ notes }: { notes: string }) {
   );
 }
 
-// Shared pill button for both the Corrected/Suggestions tabs and the
-// Original/Diff toggles. `emphasis` gives the tabs slightly heavier text so the
-// view-switch reads as distinct from the display toggles.
+// Shared pill button for both the Corrected/Suggestions/Original tabs and the
+// Diff toggle. `emphasis` gives the tabs slightly heavier text so the
+// view-switch reads as distinct from the display toggle.
 function SegButton({
   pressed,
   emphasis,
