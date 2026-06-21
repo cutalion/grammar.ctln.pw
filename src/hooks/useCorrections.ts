@@ -19,27 +19,19 @@ export function useCorrections() {
     for (const ctrl of inFlight.current) ctrl.abort();
   }, []);
 
-  const correct = useCallback(async (input: string, config: ProviderConfig, systemPrompt?: string) => {
-    const trimmed = input.trim();
-    if (!trimmed) return;
+  const isAbort = (e: unknown) => e instanceof DOMException && e.name === 'AbortError';
+  const message = (e: unknown) => (e as { message?: string })?.message ?? String(e);
 
-    const id = shortId();
-    const created: Correction = {
-      id,
-      input: trimmed,
-      output: '',
-      status: 'pending',
-      providerLabel: config.label,
-      model: config.model,
-      createdAt: Date.now(),
-      suggestion: { output: '', status: 'pending' },
-    };
-    setItems((prev) => [...prev, created]);
-
-    // Run one provider call with the given system prompt, accumulate the
-    // streamed chunks, and return the parsed result. Each call gets its own
-    // AbortController tracked in inFlight so unmount cleanup aborts both.
-    const run = async (system: string, tag: 'corrected' | 'suggested'): Promise<ParsedOutput> => {
+  // Run one provider call with the given system prompt, accumulate the streamed
+  // chunks, and return the parsed result. Each call gets its own AbortController
+  // tracked in inFlight so unmount cleanup aborts every in-flight request.
+  const runCall = useCallback(
+    async (
+      input: string,
+      config: ProviderConfig,
+      system: string,
+      tag: 'corrected' | 'suggested',
+    ): Promise<ParsedOutput> => {
       const ctrl = new AbortController();
       inFlight.current.add(ctrl);
       try {
@@ -48,7 +40,7 @@ export function useCorrections() {
         for await (const chunk of adapter.send({
           config,
           system,
-          messages: [{ id, role: 'user', content: trimmed, createdAt: Date.now() }],
+          messages: [{ id: shortId(), role: 'user', content: input, createdAt: Date.now() }],
           signal: ctrl.signal,
         })) {
           full += chunk;
@@ -57,18 +49,26 @@ export function useCorrections() {
       } finally {
         inFlight.current.delete(ctrl);
       }
-    };
+    },
+    [],
+  );
 
-    const isAbort = (e: unknown) => e instanceof DOMException && e.name === 'AbortError';
-    const message = (e: unknown) => (e as { message?: string })?.message ?? String(e);
-
-    const correction = (async () => {
+  // The two slices of a record are produced (and re-produced, on retry) by these
+  // helpers. Each owns exactly the fields it writes and clears its own error on
+  // success, so retrying one slice never disturbs the other.
+  const runCorrection = useCallback(
+    async (id: string, input: string, config: ProviderConfig, systemPrompt?: string) => {
       try {
-        const parsed = await run(systemPrompt?.trim() ? systemPrompt : SYSTEM_PROMPT, 'corrected');
+        const parsed = await runCall(
+          input,
+          config,
+          systemPrompt?.trim() ? systemPrompt : SYSTEM_PROMPT,
+          'corrected',
+        );
         setItems((prev) =>
           prev.map((c) =>
             c.id === id
-              ? { ...c, output: parsed.corrected, notes: parsed.notes, status: 'done' }
+              ? { ...c, output: parsed.corrected, notes: parsed.notes, status: 'done', error: undefined }
               : c,
           ),
         );
@@ -81,11 +81,14 @@ export function useCorrections() {
           prev.map((c) => (c.id === id ? { ...c, status: 'error', error: message(e) } : c)),
         );
       }
-    })();
+    },
+    [runCall],
+  );
 
-    const suggestion = (async () => {
+  const runSuggestion = useCallback(
+    async (id: string, input: string, config: ProviderConfig) => {
       try {
-        const parsed = await run(SUGGESTION_PROMPT, 'suggested');
+        const parsed = await runCall(input, config, SUGGESTION_PROMPT, 'suggested');
         setItems((prev) =>
           prev.map((c) =>
             c.id === id
@@ -103,10 +106,71 @@ export function useCorrections() {
           ),
         );
       }
-    })();
+    },
+    [runCall],
+  );
 
-    await Promise.all([correction, suggestion]);
-  }, []);
+  const correct = useCallback(
+    async (input: string, config: ProviderConfig, systemPrompt?: string) => {
+      const trimmed = input.trim();
+      if (!trimmed) return;
+
+      const id = shortId();
+      const created: Correction = {
+        id,
+        input: trimmed,
+        output: '',
+        status: 'pending',
+        providerLabel: config.label,
+        model: config.model,
+        createdAt: Date.now(),
+        suggestion: { output: '', status: 'pending' },
+      };
+      setItems((prev) => [...prev, created]);
+
+      await Promise.all([
+        runCorrection(id, trimmed, config, systemPrompt),
+        runSuggestion(id, trimmed, config),
+      ]);
+    },
+    [runCorrection, runSuggestion],
+  );
+
+  // Re-run a single failed slice in place, reusing the record's original input.
+  // Retry uses the currently active config, so its model/provider may differ
+  // from the first attempt — reflect that on the record so the footer stays
+  // truthful.
+  const retry = useCallback(
+    async (
+      id: string,
+      slice: 'corrected' | 'suggested',
+      config: ProviderConfig,
+      systemPrompt?: string,
+    ) => {
+      const item = items.find((c) => c.id === id);
+      if (!item) return;
+      if (slice === 'corrected') {
+        setItems((prev) =>
+          prev.map((c) =>
+            c.id === id
+              ? { ...c, status: 'pending', error: undefined, model: config.model, providerLabel: config.label }
+              : c,
+          ),
+        );
+        await runCorrection(id, item.input, config, systemPrompt);
+      } else {
+        setItems((prev) =>
+          prev.map((c) =>
+            c.id === id
+              ? { ...c, model: config.model, providerLabel: config.label, suggestion: { output: '', status: 'pending' } }
+              : c,
+          ),
+        );
+        await runSuggestion(id, item.input, config);
+      }
+    },
+    [items, runCorrection, runSuggestion],
+  );
 
   const remove = useCallback((id: string) => {
     setItems((prev) => prev.filter((c) => c.id !== id));
@@ -116,5 +180,5 @@ export function useCorrections() {
     setItems([]);
   }, []);
 
-  return { items, correct, remove, clear };
+  return { items, correct, retry, remove, clear };
 }

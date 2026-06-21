@@ -15,7 +15,7 @@ const MODELS_STALE_MS = 24 * 60 * 60 * 1000;
 
 export default function App() {
   const [settings, setSettings] = useSettings();
-  const { items, correct, remove, clear } = useCorrections();
+  const { items, correct, retry, remove, clear } = useCorrections();
   const [showSettings, setShowSettings] = useState(false);
   const [composerOutOfView, setComposerOutOfView] = useState(false);
   useTheme(settings.theme ?? "system");
@@ -41,6 +41,14 @@ export default function App() {
       return;
     }
     void correct(text, activeConfig, settings.systemPrompt);
+  };
+
+  const handleRetry = (id: string, slice: "corrected" | "suggested") => {
+    if (!activeConfig) {
+      setShowSettings(true);
+      return;
+    }
+    void retry(id, slice, activeConfig, settings.systemPrompt);
   };
 
   const scrollToTop = () => {
@@ -161,7 +169,12 @@ export default function App() {
             </div>
           ) : (
             reversed.map((item) => (
-              <CorrectionItem key={item.id} item={item} onDelete={remove} />
+              <CorrectionItem
+                key={item.id}
+                item={item}
+                onDelete={remove}
+                onRetry={handleRetry}
+              />
             ))
           )}
         </div>

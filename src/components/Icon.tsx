@@ -15,6 +15,7 @@ export {
   faDesktop,
   faSun,
   faMoon,
+  faRotateRight,
 } from '@fortawesome/free-solid-svg-icons';
 
 interface IconProps extends Omit<FontAwesomeIconProps, 'icon'> {

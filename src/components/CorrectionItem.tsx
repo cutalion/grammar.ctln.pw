@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Correction } from "../storage/corrections";
 import { hasMeaningfulDiff, wordDiff } from "../lib/diff";
-import { IconButton, faCheck, faCopy, faTrash } from "./Icon";
+import { Icon, IconButton, faCheck, faCopy, faRotateRight, faTrash } from "./Icon";
+
+type RetrySlice = "corrected" | "suggested";
 
 interface Props {
   item: Correction;
   onDelete: (id: string) => void;
+  onRetry: (id: string, slice: RetrySlice) => void;
 }
 
 type CopiedKind = "corrected" | "original" | "suggested";
@@ -26,6 +29,9 @@ interface ViewModel {
   // pending (the suggestion can finish before the correction does).
   base: string;
   baseReady: boolean;
+  // Which slice a Retry button re-runs in the error state. Undefined for the
+  // Original view, which is the raw input and can never error.
+  retrySlice?: RetrySlice;
   error?: string;
   notes?: string;
   copyKind: CopiedKind;
@@ -38,7 +44,7 @@ interface ViewModel {
 const actionRail = "flex w-6 shrink-0 justify-center";
 const actionIcon: ActionIcon = { iconSize: "2xs" };
 
-export function CorrectionItem({ item, onDelete }: Props) {
+export function CorrectionItem({ item, onDelete, onRetry }: Props) {
   const [tab, setTab] = useState<Tab>("corrected");
   const [showDiff, setShowDiff] = useState(true);
   const [copied, setCopied] = useState<CopiedKind | null>(null);
@@ -123,6 +129,9 @@ export function CorrectionItem({ item, onDelete }: Props) {
         showDiff={showDiff}
         copied={copied}
         onCopy={() => copy(view.copyKind)}
+        onRetry={
+          view.retrySlice ? () => onRetry(item.id, view.retrySlice!) : undefined
+        }
       />
 
       {view.status === "done" && view.notes && <NotesPanel notes={view.notes} />}
@@ -144,6 +153,7 @@ function resolveView(item: Correction, tab: Tab): ViewModel {
       diffable: true,
       base: item.input,
       baseReady: true,
+      retrySlice: "corrected",
       error: item.error,
       notes: item.notes,
       copyKind: "corrected",
@@ -161,6 +171,7 @@ function resolveView(item: Correction, tab: Tab): ViewModel {
       diffable: true,
       base: item.output,
       baseReady: item.status === "done",
+      retrySlice: "suggested",
       error: suggestion?.error,
       notes: suggestion?.notes,
       copyKind: "suggested",
@@ -190,11 +201,13 @@ function PrimaryContent({
   showDiff,
   copied,
   onCopy,
+  onRetry,
 }: {
   view: ViewModel;
   showDiff: boolean;
   copied: CopiedKind | null;
   onCopy: () => void;
+  onRetry?: () => void;
 }) {
   if (view.status === "absent") {
     return <StatusLine>{view.absentLabel}</StatusLine>;
@@ -203,7 +216,21 @@ function PrimaryContent({
     return <StatusLine>{view.pendingLabel}</StatusLine>;
   }
   if (view.status === "error") {
-    return <StatusLine error>{view.error}</StatusLine>;
+    return (
+      <StatusLine error>
+        <div>{view.error}</div>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-2 inline-flex items-center gap-1.5 rounded border border-neutral-200 px-2 py-1 text-xs font-medium text-neutral-600 transition hover:bg-neutral-50 dark:border-gh-border-muted dark:text-neutral-300 dark:hover:bg-gh-overlay"
+          >
+            <Icon icon={faRotateRight} size="2xs" />
+            Retry
+          </button>
+        )}
+      </StatusLine>
+    );
   }
 
   const canDiff =
