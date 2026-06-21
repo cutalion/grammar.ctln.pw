@@ -83,7 +83,7 @@ Alongside the strict correction, every submit fires a **second, parallel** provi
 
 Both calls run from the original input and update independent slices of one `Correction` record — top-level fields for the correction, a nested `suggestion: { output, notes?, status, error? }` for the suggestion (`src/storage/corrections.ts`). Either can fail or be interrupted without affecting the other; `loadHistory` rewrites leftover pending suggestions to "Interrupted" just like the top-level status. The field is additive — no localStorage version bump.
 
-`CorrectionItem` renders two mutually-exclusive tabs: **Corrected** (existing behavior, with `Diff`/`Original` sub-toggles) and **Suggestions** (the suggested rewrite diffed against the *corrected* text, plus the suggestion's own notes). Suggestions are always generated (eager); there is no per-config toggle and no separate suggestion model.
+`CorrectionItem` renders two mutually-exclusive tabs — **Corrected** (input → corrected) and **Suggestions** (corrected → suggested) — alongside two *persistent* display toggles, **Original** and **Diff**, that apply to whichever tab is active and never hide (the only thing the tab switch hides is the inactive tab's body). Each tab resolves to a single `ViewModel` (primary text, diff base, status, notes) that one shared content renderer consumes, so both tabs get diff highlighting, an empty-state hint, a copy button, and their own amber notes. The suggestion's diff base is the *corrected* text; while the correction is still pending (`baseReady` false) the suggested text renders plain. Suggestions are always generated (eager); there is no per-config toggle and no separate suggestion model.
 
 ### Request flow
 
