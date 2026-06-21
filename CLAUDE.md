@@ -77,6 +77,14 @@ The `<notes>` block is *intentionally optional* — the prompt instructs the mod
 
 This is unconditional — there's no per-config toggle. Less-capable models may produce poor notes or skip the format; the parser's fallback keeps them functional.
 
+### Suggestions (naturalness rewrites)
+
+Alongside the strict correction, every submit fires a **second, parallel** provider call using `SYSTEM_PROMPT`'s counterpart `SUGGESTION_PROMPT` (`src/prompts/suggestionPrompt.ts`). Where the corrector is forbidden from rewriting, the suggester proposes native-speaker phrasing (articles, prepositions, collocations, idioms, word choice) while preserving meaning, structure, tone, and language. It wraps its reply in `<suggested>…</suggested>` plus an optional `<notes>` block, parsed by the same `parseOutput` (now taking a tag argument: `'corrected'` | `'suggested'`).
+
+Both calls run from the original input and update independent slices of one `Correction` record — top-level fields for the correction, a nested `suggestion: { output, notes?, status, error? }` for the suggestion (`src/storage/corrections.ts`). Either can fail or be interrupted without affecting the other; `loadHistory` rewrites leftover pending suggestions to "Interrupted" just like the top-level status. The field is additive — no localStorage version bump.
+
+`CorrectionItem` renders three mutually-exclusive tabs on the left of the header — **Corrected** (input → corrected), **Suggestions** (corrected → suggested), and **Original** (the raw input) — plus a single persistent **Diff** toggle on the right next to the delete button. The model name sits in a footer at the bottom of the card. Each tab resolves (via `resolveView`) to one `ViewModel` (primary text, `diffable`, diff base + `baseReady`, status, notes, copy/empty/pending labels) that a single shared content renderer consumes, so every tab gets the same diff highlighting, empty-state hint, copy button, and amber notes treatment. The Original view is `diffable: false` (nothing to diff the input against), so it always renders plain. The suggestion's diff base is the *corrected* text; while the correction is still pending (`baseReady` false) the suggested text renders plain. Suggestions are always generated (eager); there is no per-config toggle and no separate suggestion model.
+
 ### Request flow
 
 1. User types into `Composer`, presses Correct (or ⌘/Ctrl+Enter).

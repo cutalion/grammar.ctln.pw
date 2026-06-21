@@ -3,11 +3,17 @@ export interface ParsedOutput {
   notes?: string;
 }
 
-export function parseOutput(raw: string): ParsedOutput {
-  const correctedMatch = raw.match(/<corrected>([\s\S]*?)<\/corrected>/i);
+export function parseOutput(
+  raw: string,
+  tag: 'corrected' | 'suggested' = 'corrected',
+): ParsedOutput {
+  const primary = new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`, 'i');
+  const correctedMatch = raw.match(primary);
+
   if (!correctedMatch) {
     return { corrected: raw.trim() };
   }
+
   const notesMatch = raw.match(/<notes>([\s\S]*?)<\/notes>/i);
   const notes = notesMatch?.[1].trim();
   return {
