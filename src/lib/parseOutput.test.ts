@@ -48,4 +48,28 @@ Hello world.
     const raw = '<corrected>line one\nline two</corrected>';
     expect(parseOutput(raw)).toEqual({ corrected: 'line one\nline two' });
   });
+
+  it('extracts suggested text and notes when given the suggested tag', () => {
+    const raw = `<suggested>
+I went to the store.
+</suggested>
+<notes>
+- "to the store" is the natural collocation
+</notes>`;
+    expect(parseOutput(raw, 'suggested')).toEqual({
+      corrected: 'I went to the store.',
+      notes: '- "to the store" is the natural collocation',
+    });
+  });
+
+  it('falls back to raw text when the suggested tag is missing', () => {
+    expect(parseOutput('no tags here', 'suggested')).toEqual({
+      corrected: 'no tags here',
+    });
+  });
+
+  it('does not match the corrected tag when asked for the suggested tag', () => {
+    const raw = '<corrected>grammar only</corrected>';
+    expect(parseOutput(raw, 'suggested')).toEqual({ corrected: 'grammar only' });
+  });
 });
