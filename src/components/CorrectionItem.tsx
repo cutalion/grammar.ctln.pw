@@ -288,8 +288,7 @@ function TabButton({
   return (
     <button
       type="button"
-      role="tab"
-      aria-selected={pressed}
+      aria-pressed={pressed}
       onClick={onClick}
       className={`rounded px-2 py-0.5 font-medium transition ${
         pressed
