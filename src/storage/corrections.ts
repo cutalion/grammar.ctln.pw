@@ -10,6 +10,12 @@ export interface Correction {
   providerLabel?: string;
   model?: string;
   createdAt: number;
+  suggestion?: {
+    output: string;
+    notes?: string;
+    status: 'pending' | 'done' | 'error';
+    error?: string;
+  };
 }
 
 export function loadHistory(): Correction[] {
@@ -18,11 +24,23 @@ export function loadHistory(): Correction[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return (parsed as Correction[]).map((c) =>
-      c.status === 'pending'
-        ? { ...c, status: 'error', error: c.error ?? 'Interrupted' }
-        : c,
-    );
+    return (parsed as Correction[]).map((c) => {
+      const fixed: Correction =
+        c.status === 'pending'
+          ? { ...c, status: 'error', error: c.error ?? 'Interrupted' }
+          : c;
+      if (fixed.suggestion?.status === 'pending') {
+        return {
+          ...fixed,
+          suggestion: {
+            ...fixed.suggestion,
+            status: 'error',
+            error: fixed.suggestion.error ?? 'Interrupted',
+          },
+        };
+      }
+      return fixed;
+    });
   } catch {
     return [];
   }
