@@ -7,6 +7,7 @@ export interface Settings {
   configs: ProviderConfig[];
   activeConfigId: string | null;
   systemPrompt?: string;
+  suggestionPrompt?: string;
   theme?: ThemeMode;
 }
 
@@ -29,6 +30,7 @@ export function loadSettings(): Settings {
       configs: parsed.configs ?? [],
       activeConfigId: parsed.activeConfigId ?? null,
       systemPrompt: parsed.systemPrompt,
+      suggestionPrompt: parsed.suggestionPrompt,
       theme: normalizeTheme(parsed.theme),
     };
   } catch {

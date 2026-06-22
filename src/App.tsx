@@ -40,7 +40,7 @@ export default function App() {
       setShowSettings(true);
       return;
     }
-    void correct(text, activeConfig, settings.systemPrompt);
+    void correct(text, activeConfig, settings.systemPrompt, settings.suggestionPrompt);
   };
 
   const handleRetry = (id: string, slice: "corrected" | "suggested") => {
@@ -48,7 +48,7 @@ export default function App() {
       setShowSettings(true);
       return;
     }
-    void retry(id, slice, activeConfig, settings.systemPrompt);
+    void retry(id, slice, activeConfig, settings.systemPrompt, settings.suggestionPrompt);
   };
 
   const scrollToTop = () => {

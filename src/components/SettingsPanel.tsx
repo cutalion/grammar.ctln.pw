@@ -11,6 +11,7 @@ import { ProviderConfig, ProviderId } from "../providers/types";
 import { adapters } from "../providers";
 import { shortId } from "../lib/id";
 import { SYSTEM_PROMPT } from "../prompts/systemPrompt";
+import { SUGGESTION_PROMPT } from "../prompts/suggestionPrompt";
 import { Icon, IconButton, faPen, faTrash, faXmark } from "./Icon";
 
 const AUTOLOAD_DEBOUNCE_MS = 600;
@@ -202,6 +203,7 @@ export function SettingsPanel({
       configs,
       activeConfigId,
       systemPrompt: draft.systemPrompt,
+      suggestionPrompt: draft.suggestionPrompt,
     }));
     onClose();
   };
@@ -407,6 +409,37 @@ export function SettingsPanel({
               {draft.systemPrompt === undefined
                 ? "Using built-in default."
                 : "Custom prompt active. The model is expected to wrap output in <corrected>…</corrected> and optional <notes>…</notes> tags."}
+            </div>
+          </div>
+
+          <div className="space-y-2 border-t border-neutral-200 pt-4 dark:border-gh-border-muted">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Suggestion prompt</h3>
+              <button
+                type="button"
+                onClick={() =>
+                  setDraft({ ...draft, suggestionPrompt: undefined })
+                }
+                disabled={draft.suggestionPrompt === undefined}
+                className="shrink-0 rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 disabled:opacity-40 dark:border-gh-border dark:hover:bg-gh-overlay"
+                title="Restore the built-in default prompt"
+              >
+                Restore default
+              </button>
+            </div>
+            <textarea
+              value={draft.suggestionPrompt ?? SUGGESTION_PROMPT}
+              onChange={(e) =>
+                setDraft({ ...draft, suggestionPrompt: e.target.value })
+              }
+              rows={10}
+              className="input font-mono text-xs"
+              spellCheck={false}
+            />
+            <div className="text-[10px] text-neutral-400">
+              {draft.suggestionPrompt === undefined
+                ? "Using built-in default."
+                : "Custom prompt active. The model is expected to wrap output in <suggested>…</suggested> and optional <notes>…</notes> tags."}
             </div>
           </div>
 

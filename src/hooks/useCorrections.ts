@@ -86,9 +86,14 @@ export function useCorrections() {
   );
 
   const runSuggestion = useCallback(
-    async (id: string, input: string, config: ProviderConfig) => {
+    async (id: string, input: string, config: ProviderConfig, suggestionPrompt?: string) => {
       try {
-        const parsed = await runCall(input, config, SUGGESTION_PROMPT, 'suggested');
+        const parsed = await runCall(
+          input,
+          config,
+          suggestionPrompt?.trim() ? suggestionPrompt : SUGGESTION_PROMPT,
+          'suggested',
+        );
         setItems((prev) =>
           prev.map((c) =>
             c.id === id
@@ -111,7 +116,12 @@ export function useCorrections() {
   );
 
   const correct = useCallback(
-    async (input: string, config: ProviderConfig, systemPrompt?: string) => {
+    async (
+      input: string,
+      config: ProviderConfig,
+      systemPrompt?: string,
+      suggestionPrompt?: string,
+    ) => {
       const trimmed = input.trim();
       if (!trimmed) return;
 
@@ -130,7 +140,7 @@ export function useCorrections() {
 
       await Promise.all([
         runCorrection(id, trimmed, config, systemPrompt),
-        runSuggestion(id, trimmed, config),
+        runSuggestion(id, trimmed, config, suggestionPrompt),
       ]);
     },
     [runCorrection, runSuggestion],
@@ -146,6 +156,7 @@ export function useCorrections() {
       slice: 'corrected' | 'suggested',
       config: ProviderConfig,
       systemPrompt?: string,
+      suggestionPrompt?: string,
     ) => {
       const item = items.find((c) => c.id === id);
       if (!item) return;
@@ -166,7 +177,7 @@ export function useCorrections() {
               : c,
           ),
         );
-        await runSuggestion(id, item.input, config);
+        await runSuggestion(id, item.input, config, suggestionPrompt);
       }
     },
     [items, runCorrection, runSuggestion],
