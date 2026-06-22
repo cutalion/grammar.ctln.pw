@@ -24,9 +24,10 @@ interface ViewModel {
   // Whether this view supports diffing at all. The Original view is the raw
   // input — there is nothing to diff it against, so it always renders plain.
   diffable: boolean;
-  // Diff base: the original input for the corrected view, the corrected output
-  // for the suggestions view. `baseReady` is false while that base is still
-  // pending (the suggestion can finish before the correction does).
+  // Diff base: the original input for both the corrected and suggestions views.
+  // Each is an independent transform of the raw input, so each diffs against it.
+  // `baseReady` exists for views whose base could still be pending; the input is
+  // always present, so it is currently always true where diffable.
   base: string;
   baseReady: boolean;
   // Which slice a Retry button re-runs in the error state. Undefined for the
@@ -169,8 +170,10 @@ function resolveView(item: Correction, tab: Tab): ViewModel {
       status: suggestion ? suggestion.status : "absent",
       text: suggestion?.output ?? "",
       diffable: true,
-      base: item.output,
-      baseReady: item.status === "done",
+      // The suggestion is generated from the raw input, independently of the
+      // correction — so it diffs against the input, not the corrected output.
+      base: item.input,
+      baseReady: true,
       retrySlice: "suggested",
       error: suggestion?.error,
       notes: suggestion?.notes,
